@@ -1,0 +1,20 @@
+server:
+  port: 8006
+  tomcat:
+    mbeanregistry:
+      enabled: true
+spring:
+  application:
+    name: test-project-mvc
+  datasource:
+    host: localhost
+    port: 5432
+    database: postgres
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://${spring.datasource.host}:${spring.datasource.port}/${spring.datasource.database}?autoReconnect=true
+    hikari:
+      maximumPoolSize: 6
+      minimumIdle: 4
+      driverClassName: org.postgresql.Driver
+      jdbcUrl: ${spring.datasource.url}
