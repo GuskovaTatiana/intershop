@@ -15,7 +15,7 @@ services:
   app:
     build: .
     ports:
-      - "8007:8006"
+      - "8006:8006"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
       SPRING_DATASOURCE_USERNAME: postgres

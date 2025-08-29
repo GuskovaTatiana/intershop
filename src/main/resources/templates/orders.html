@@ -3,8 +3,8 @@
 
 <head>
     <title>Заказы</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
     <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
     <link rel="stylesheet" th:href="@{/css/cart_page_style.css}"/>
@@ -22,15 +22,14 @@
 </header>
 <div class="container" >
     <div class="cart-container">
-        <div class="cart-items">
+        <div class="cart-items" id = "order-list">
             <div class="order-item" th:each="order : ${orders}">
                 <div>
                     <a class="cart-title" th:text="${'Заказ №'+order.getId()} " th:href="${'/orders/'+order.getId()}"/>
                     <span class="status-block " th:text="'    '+ ${order.geStatusName()}" th:href="${'/orders/'+order.getId()}"></span>
                 </div>
-<!--                <a class="cart-title" th:text="${'Заказ №'+order.getId()} +  '    '+ ${order.geStatusName()}" th:href="${'/orders/'+order.getId()}"/>-->
                 <div th:each="product : ${order.getProducts()}">
-                    <h3 class="order-description" th:text="${product.getTitle()+' ('+product.getCount()+' шт.) '+(product.getTotalPrice())+' руб.'}"></h3>
+                    <h3 th:if="${product != null}" class="order-description" th:text="${product.getTitle()} + ' ('+${product.getCount()} + ' шт.() '+ ${product.getTotalPrice()} +' руб.'"></h3>
                 </div>
                 <div class="summary-details">
                     <div class="summary-row">
@@ -43,23 +42,6 @@
         </div>
     </div>
 </div>
-<!--<table style="width:70%;margin-left:auto;margin-right:auto;">-->
-<!--    <tr th:each="order : ${orders}">-->
-<!--        <td>-->
-<!--            <h2>-->
-<!--                <a th:text="${'Заказ №'+order.getId()}" th:href="${'/orders/'+order.getId()}"></a>-->
-<!--            </h2>-->
-<!--            <table>-->
-<!--                <tr th:each="product : ${order.getProducts()}">-->
-<!--                    <td th:text="${product.getTitle()+' ('+product.getCount()+' шт.) '+(product.getTotalPrice())+' руб.'}"></td>-->
-<!--                </tr>-->
-<!--            </table>-->
-<!--            <p>-->
-<!--                <b th:text="${'Сумма: '+order.getTotalPrice()}+' руб.'"></b>-->
-<!--            </p>-->
-<!--        </td>-->
-<!--    </tr>-->
-<!--</table>-->
 </body>
 
 </html>

@@ -3,12 +3,9 @@ package ru.yandex.practicum.mvc_internet_shop.mapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.mvc_internet_shop.model.Order;
-import ru.yandex.practicum.mvc_internet_shop.model.Product;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.OrderDTO;
-import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @AllArgsConstructor

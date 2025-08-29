@@ -88,7 +88,6 @@ public class OrderService {
         return orderMapper.toDto(order);
     }
 
-
     /**
      * Получение заказа по идентификатору
      * */
@@ -98,7 +97,6 @@ public class OrderService {
 
         return orderMapper.toDto(order);
     }
-
 
     /**
      * Добавление/обновление товара в корзину
@@ -140,7 +138,6 @@ public class OrderService {
 
         return item.getProductId();
     }
-
 
     /**
      * Изменение количества товара из корзины

@@ -1,13 +1,9 @@
 package ru.yandex.practicum.mvc_internet_shop.controller;
 
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +12,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.OrderDTO;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
 import ru.yandex.practicum.mvc_internet_shop.service.OrderService;
-import ru.yandex.practicum.mvc_internet_shop.service.ProductService;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,7 +35,7 @@ public class CartController {
         dto.sort(Comparator.comparing(ProductDTO::getId));
         model.addAttribute("products",dto);
          model.addAttribute("total" ,order.getTotalPrice());
-        model.addAttribute("orderId", order.getId());
+
         return "cart"; // Открывает страницу со списком товаров
     }
 

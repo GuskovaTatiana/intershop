@@ -3,8 +3,8 @@
 
 <head>
     <title>Заказ</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
     <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
     <link rel="stylesheet" th:href="@{/css/cart_page_style.css}"/>
@@ -24,8 +24,8 @@
 <div class="container" >
     <div class="cart-container">
         <div class="cart-items">
-            <div>
-                <a class="cart-title" th:text="${'Заказ №'+order.getId()}"></a>
+            <div id = "order-title">
+                <a class="cart-title" th:text="${'Заказ № '+order.getId()}"></a>
                 <span class="status-block " th:text="'    '+ ${order.geStatusName()}" ></span>
             </div>
 

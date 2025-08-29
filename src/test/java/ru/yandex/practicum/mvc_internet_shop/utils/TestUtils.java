@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;

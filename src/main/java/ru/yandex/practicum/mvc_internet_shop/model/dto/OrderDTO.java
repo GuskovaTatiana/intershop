@@ -1,16 +1,10 @@
 package ru.yandex.practicum.mvc_internet_shop.model.dto;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import ru.yandex.practicum.mvc_internet_shop.model.ProductsInOrder;
 import ru.yandex.practicum.mvc_internet_shop.model.enums.OrderStatus;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Builder

@@ -2,8 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
     <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
 
@@ -25,15 +25,15 @@
 <div class="container">
     <div class="filters">
         <form method="get" th:action="@{/product}">
-            <input type="text" class="search-box" placeholder="Поиск товаров..." name="search" th:value="${filter.getSearch()}">
+            <input type="text" class="search-box" placeholder="Поиск товаров..." name="search" th:value="${filter.getSearch()}" />
         </form>
             <div class="filter-controls">
                 <form method="get" th:action="@{/product}">
                 <select id="price-filter" name="sort" onchange="this.form.submit()">
-                    <option value="title asc" th:selected="${filter.getSort() == 'title asc'}">Сортировка по алфавиту &blacktriangle;</option>
-                    <option value="title desc" th:selected="${filter.getSort() == 'title desc'}">Сортировка по алфавиту &blacktriangledown;</option>
-                    <option value="price asc" th:selected="${filter.getSort() == 'price asc'}">Сортировка по цене &blacktriangle;</option>
-                    <option value="price desc" th:selected="${filter.getSort() == 'price desc'}">Сортировка по цене &blacktriangledown;</option>
+                    <option value="title asc" th:selected="${filter.getSort() == 'title asc'}">Сортировка по алфавиту &#9652;</option>
+                    <option value="title desc" th:selected="${filter.getSort() == 'title desc'}">Сортировка по алфавиту &#9662;</option>
+                    <option value="price asc" th:selected="${filter.getSort() == 'price asc'}">Сортировка по цене &#9652;</option>
+                    <option value="price desc" th:selected="${filter.getSort() == 'price desc'}">Сортировка по цене &#9662;</option>
                 </select>
                 </form>
                 <div class="items-per-page">
@@ -68,7 +68,7 @@
     <div class="products-grid" id="products-container" >
         <div class="product-card" th:each="product : ${products}">
             <a th:href="@{/product/{productId}(productId=${product.getId()})}">
-                <img th:src="${product.getImageUrl()}" class="product-image">
+                <img th:src="${product.getImageUrl()}" class="product-image" />
             </a>
             <div class="product-info">
                 <a th:href="@{/product/{productId}(productId=${product.getId()})}">

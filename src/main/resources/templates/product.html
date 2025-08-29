@@ -2,8 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
     <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
     <link rel="stylesheet" th:href="@{/css/cart_page_style.css}"/>
@@ -26,8 +26,8 @@
         <div class="cart-items">
             <h2 class="cart-title">Товар</h2>
             <div class="cart-item">
-                <img th:src="${product.getImageUrl()}" alt="Товар" class="item-image-product">
-                <div class="item-details">
+                <img th:src="${product.getImageUrl()}" alt="Товар" class="item-image-product" />
+                <div class="item-details" id = "item">
                     <h3 class="item-name-product" th:text="${product.getTitle()}"></h3>
                     <div class="item-price" th:text="${product.getPrice()}+' ₽'"></div>
                     <h3 class="item-block">Описание</h3>

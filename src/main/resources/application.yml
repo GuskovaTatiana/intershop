@@ -24,6 +24,3 @@ spring:
     change-log: classpath:changelog/db.changelog-master.xml
     enabled: true
     default-schema: public
-
-images:
-  baseUrl: /opt/web-blog

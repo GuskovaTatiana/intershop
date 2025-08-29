@@ -41,7 +41,6 @@ public class OrderController {
         return "orders"; // Открывает страницу с заказом
     }
 
-
     /**
      * Получение заказа по идентификатору
      * */

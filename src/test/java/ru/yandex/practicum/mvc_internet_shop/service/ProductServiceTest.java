@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.ActiveProfiles;
-import ru.yandex.practicum.mvc_internet_shop.mapper.ProductMapper;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.FilterProductDTO;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
 import ru.yandex.practicum.mvc_internet_shop.utils.TestUtils;
@@ -50,7 +49,6 @@ public class ProductServiceTest {
         assertNotNull(products.getContent());
         assertEquals(10, products.getContent().size());
     }
-
 
     // получение товара по идентификатору
     @Test

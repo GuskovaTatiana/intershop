@@ -21,6 +21,7 @@ public class ProductMapper {
                 .itemId(itemId)
                 .build();
     }
+
     public List<ProductDTO> toDto(List<Product> products, Map<Integer, Integer> countProduct, Map<Integer, Integer> orderItemIdToProduct) {
         return products.stream().map(it -> toDto(it, countProduct.get(it.getId()), orderItemIdToProduct.get(it.getId()))).toList();
     }

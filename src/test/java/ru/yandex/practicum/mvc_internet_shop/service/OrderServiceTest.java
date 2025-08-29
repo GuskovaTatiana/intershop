@@ -1,15 +1,11 @@
 package ru.yandex.practicum.mvc_internet_shop.service;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ru.yandex.practicum.mvc_internet_shop.model.Order;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.OrderDTO;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
@@ -17,16 +13,13 @@ import ru.yandex.practicum.mvc_internet_shop.model.enums.OrderStatus;
 import ru.yandex.practicum.mvc_internet_shop.utils.TestUtils;
 
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
 public class OrderServiceTest {
 
@@ -40,18 +33,16 @@ public class OrderServiceTest {
     private TestUtils testUtils;
 
     @BeforeEach
-    void setupAll() {
+    void setup() {
         // Добавление тестовых данных
         testUtils.executeSQL("/sql/insert_data_to_bd.sql");
     }
 
     @AfterEach
-    void setDownAll() {
+    void setDown() {
         // Удаление тестовых данных
         testUtils.executeSQL("/sql/clear_data_to_bd.sql");
     }
-
-    private static Integer newOrderInStatusCreateId;
 
     // Получение списка оформленных заказов
     @Test
@@ -98,7 +89,6 @@ public class OrderServiceTest {
         orderService.addNewOrder();
         //создаем новый заказ
         Order createOrder = orderService.findOrCreateOrderInCart();
-        newOrderInStatusCreateId = createOrder.getId();
         assertNotNull(createOrder);
         assertTrue(createOrder.getProducts().isEmpty());
         assertEquals(OrderStatus.CREATE, createOrder.getStatus());
@@ -170,6 +160,7 @@ public class OrderServiceTest {
         assertEquals(product.getCount() + quantity, dto.getCount());
         assertEquals(product.getItemId(), dto.getItemId());
     }
+
     //Удаление товара из корзины
     @Test
     void deleteProductInOrder_shouldChangeCountProductAddReturnProductId() {

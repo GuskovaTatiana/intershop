@@ -17,6 +17,7 @@ public class ProductDTO {
     private Integer itemId;
 
     public Integer getTotalPrice() {
-        return price * count;
+
+        return count != null ? price * count : price;
     }
 }

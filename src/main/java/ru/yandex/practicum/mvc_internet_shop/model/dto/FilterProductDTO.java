@@ -1,10 +1,8 @@
 package ru.yandex.practicum.mvc_internet_shop.model.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Getter
 @Setter
