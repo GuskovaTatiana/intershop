@@ -2,60 +2,94 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
+    <link rel="stylesheet" th:href="@{/css/cart_page_style.css}"/>
     <title>Корзина товаров</title>
 </head>
 
 <body>
-<a href="/orders" style="float:right;">
-    <b>ЗАКАЗЫ &cudarrr;</b>
-</a>
-<a href="/main/items" style="float:right;">
-    <b>ГЛАВНАЯ &cudarrr;</b>
-</a>
-<table style="width:70%;margin-left:auto;margin-right:auto;">
-    <tr th:each="item : ${items}">
-        <td>
-            <table>
-                <tr>
-                    <td>
-                        <img width="300" height="300" th:src="${'http://localhost:8080/'+item.getImgPath()}">
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <b th:text="${item.getTitle()}"></b>
-                    </td>
-                    <td>
-                        <b th:text="${item.getPrice()}+' руб.'"></b>
-                    </td>
-                </tr>
-                <tr><td th:text="${item.getDescription()}"></td></tr>
-                <tr>
-                    <td>
-                        <form th:action="${'/cart/items/'+item.getId()}" method="post">
-                            <button name="action" value="minus">-</button>
-                            <span th:text="${item.getCount()}"></span>
-                            <button name="action" value="plus">+</button>
-                            <button name="action" value="delete" style="float:right;">&cross;</button>
+<header>
+    <div class="container header-content">
+        <div class="logo">МАГАЗИН</div>
+        <div class="cart">
+            <a class="header_button" th:href="@{/product}">Каталог</a>
+            <a class="header_button" th:href="@{/orders}">Заказы </a>
+        </div>
+    </div>
+</header>
+<div class="container" >
+    <div th:if="${products != null && !products.isEmpty()}" class="cart-container">
+        <div class="cart-items">
+            <h2 class="cart-title">Корзина</h2>
+        <div class="cart-item" th:each="product : ${products}">
+            <a th:href="@{/product/{productId}(productId=${product.getId()})}">
+                <img th:src="${product.getImageUrl()}" alt="Товар" class="item-image"/>
+            </a>
+            <div class="item-details">
+                <a th:href="@{/product/{productId}(productId=${product.getId()})}">
+                    <h3 class="item-name" th:text="${product.getTitle()}"></h3>
+                </a>
+                <div class="item-price" th:text="${product.getTotalPrice()}+' ₽'"></div>
+                <div class="item-actions">
+                    <div th:if="${product.getItemId() != null}" class="quantity-controls">
+                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, redirectTo = 'cart')}" method="post">
+                            <button class="quantity-btn" name ="quantity" value="-1" >-</button>
+                            <span class="quantity" th:text="${product.getCount()}"></span>
+                            <button class="quantity-btn" name ="quantity"  value="1">+</button>
                         </form>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-    <tr>
-        <td style="text-align:right">
-            <b th:text="'Итого: '+${total}+' руб.'"></b>
-        </td>
-    </tr>
-    <tr>
-        <td style="text-align:right">
-            <form action="/buy" method="post" th:if="${!empty}">
-                <button>Купить</button>
+                    </div>
+                    <form th:if="${product.getItemId() != null}" th:action="@{/cart/item/{id}/delete(id=${product.getItemId()}, redirectTo = 'cart')}" method="post">
+                        <button  class="remove-btn">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
+        <!-- Боковая панель с итогами -->
+        <div class="cart-summary">
+            <h3 class="summary-title">Ваш заказ</h3>
+            <div class="summary-details">
+                <div class="summary-row">
+                    <span th:text="'Товары (' + ${products.size()} + ')'"></span>
+                    <span th:text="${total} + '₽'"></span>
+                </div>
+                <div class="summary-row">
+                    <span>Доставка</span>
+                    <span style="color: #27ae60;">Бесплатно</span>
+                </div>
+            </div>
+            <div class="summary-total">
+                <div class="summary-row">
+                    <span>Итого</span>
+                    <span th:text="${total} + '₽'"></span>
+                </div>
+            </div>
+            <form th:action="@{/orders}" method="post">
+                <button class="checkout-btn">Заказать</button>
             </form>
-        </td>
-    </tr>
-</table>
+            <div class="delivery-info">
+                <p><i class="fas fa-truck"></i> Бесплатная доставка завтра</p>
+                <p><i class="fas fa-info-circle"></i> Оформление до 22:00</p>
+            </div>
+        </div>
+    </div>
+    <div th:unless="${products != null && !products.isEmpty()}" class="cart-container">
+        <div class="cart-items">
+            <div class="cart-items">
+                <h2 class="cart-title">Корзина</h2>
+                <div class="empty-message">
+                    <span>Корзина пуста!</span>
+                </div>
+
+        </div>
+    </div>
+    </div>
+</div>
 </body>
 
 </html>

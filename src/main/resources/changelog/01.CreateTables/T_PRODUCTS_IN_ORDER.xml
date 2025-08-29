@@ -1,0 +1,25 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.liquibase.org/xml/ns/dbchangelog">
+
+    <changeSet author="terohovets" id="create table T_PRODUCTS_IN_ORDER">
+        <createTable tableName="t_products_in_order">
+            <column name="id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="Integer">
+                <constraints foreignKeyName="order_id_fk" referencedTableName="t_orders" referencedColumnNames="id"
+                             nullable="false"/>
+            </column>
+            <column name="product_id" type="Integer">
+                <constraints foreignKeyName="product_id_fk" referencedTableName="T_PRODUCTS" referencedColumnNames="id"
+                             nullable="false"/>
+            </column>
+            <column name="product_count" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

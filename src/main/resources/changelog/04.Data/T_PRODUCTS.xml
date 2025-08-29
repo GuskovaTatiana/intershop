@@ -1,0 +1,9 @@
+<databaseChangeLog
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.25.xsd"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.liquibase.org/xml/ns/dbchangelog">
+
+    <changeSet author="terohovets" id="add default data to table T_PRODUCTS">
+        <sqlFile path="changelog/sql/add_test_data_to_table_product.sql"/>
+    </changeSet>
+</databaseChangeLog>

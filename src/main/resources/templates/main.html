@@ -2,86 +2,99 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <title>Витрина товаров</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
+
+
+
+
 </head>
 
 <body>
-    <a href="/orders" style="float:right;">
-        <b>ЗАКАЗЫ &cudarrr;</b>
-    </a>
-    <a href="/cart/items" style="float:right;">
-        <b>КОРЗИНА &cudarrr;</b>
-    </a>
-    <table style="width:70%;margin-left:auto;margin-right:auto;">
-        <tr>
-            <td>
-                <form>
-                    <p>
-                        <label for="search">Найти: </label>
-                        <input id="search" style="width:300px;" name="search" th:value="${search}">
-                        <button name="action">&#128269;</button>
-                    </p>
-                    <p>
-                        <label for="sort">Сортировка: </label>
-                        <select id="sort" name="sort" onchange="this.form.submit()">
-                            <option value="NO" th:selected="${sort=='NO'}">нет</option>
-                            <option value="ALPHA" th:selected="${sort=='ALPHA'}">по алфавиту</option>
-                            <option value="PRICE" th:selected="${sort=='PRICE'}">по цене</option>
-                        </select>
-                    </p>
-                    <p>
-                        <label for="pageSize">Число товаров: </label>
-                        <select id="pageSize" name="pageSize" onchange="this.form.submit()">
-                            <option value="5" th:selected="${paging.pageSize()==5}">5</option>
-                            <option value="10" th:selected="${paging.pageSize()==10}">10</option>
-                            <option value="20" th:selected="${paging.pageSize()==20}">20</option>
-                            <option value="50" th:selected="${paging.pageSize()==50}">50</option>
-                            <option value="100" th:selected="${paging.pageSize()==100}">100</option>
-                        </select>
-                    </p>
-                    <p>
-                        <button th:if="${paging.hasPrevious()}" name="pageNumber" th:value="${paging.pageNumber()-1}">&lt;</button>
-                        <span th:text="${'Страница: '+paging.pageNumber()}"></span>
-                        <button th:if="${paging.hasNext()}" name="pageNumber" th:value="${paging.pageNumber()+1}">&gt;</button>
-                    </p>
+<header>
+    <div class="container header-content">
+        <div class="logo">МАГАЗИН</div>
+        <div class="cart">
+            <a class="header_button" th:href="@{/orders}">Заказы </a>
+            <a class="header_button" th:href="@{/cart}">Корзина</a>
+        </div>
+    </div>
+</header>
+<div class="container">
+    <div class="filters">
+        <form method="get" th:action="@{/product}">
+            <input type="text" class="search-box" placeholder="Поиск товаров..." name="search" th:value="${filter.getSearch()}">
+        </form>
+            <div class="filter-controls">
+                <form method="get" th:action="@{/product}">
+                <select id="price-filter" name="sort" onchange="this.form.submit()">
+                    <option value="title asc" th:selected="${filter.getSort() == 'title asc'}">Сортировка по алфавиту &blacktriangle;</option>
+                    <option value="title desc" th:selected="${filter.getSort() == 'title desc'}">Сортировка по алфавиту &blacktriangledown;</option>
+                    <option value="price asc" th:selected="${filter.getSort() == 'price asc'}">Сортировка по цене &blacktriangle;</option>
+                    <option value="price desc" th:selected="${filter.getSort() == 'price desc'}">Сортировка по цене &blacktriangledown;</option>
+                </select>
                 </form>
-            </td>
-        </tr>
-        <tr th:each="itemsRow : ${items}">
-            <td th:each="item : ${itemsRow}">
-                <table>
-                    <tr>
-                        <td>
-                            <a th:href="${'/items/'+item.getId()}">
-                                <img width="300" height="300" th:src="${'http://localhost:8080/'+item.getImgPath()}">
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <b th:text="${item.getTitle()}"></b>
-                        </td>
-                        <td>
-                            <b th:text="${item.getPrice()}+' руб.'"></b>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td th:text="${item.getDescription()}"></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <form th:action="${'/main/items/'+item.getId()}" method="post">
-                                <button name="action" value="minus">-</button>
-                                <span th:text="${item.getCount()}"></span>
-                                <button name="action" value="plus">+</button>
-                                <button name="action" value="plus" th:if="${item.getCount()==0}" style="float:right;">В корзину</button>
-                            </form>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+                <div class="items-per-page">
+                    <form method="get" th:action="@{/product}">
+                        <span>Товаров на странице:</span>
+                        <select id="items-per-page" name="size" onchange="this.form.submit()">
+                            <option value="5" th:selected="${paging.size == 5}">5</option>
+                            <option value="10" th:selected="${paging.size == 10}">10</option>
+                            <option value="20" th:selected="${paging.size == 20}">20</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+    </div>
+    <div class="pagination" id="pagination" th:if="${paging.totalPages > 1}">
+        <!-- Пагинация будет добавлена через JavaScript -->
+            <nav aria-label="Page navigation" class="pagination">
+                <ul class="pagination">
+                    <div class="page-item" th:classappend="${paging.number == 0} ? 'disabled'">
+                        <a class="page-link" th:href="@{/product(page=${paging.number - 1})}" aria-label="Previous" th:text="'←'" />
+                    </div>
+                    <div class="page-item" th:each="i : ${#numbers.sequence(0, paging.totalPages - 1)}" th:classappend="${paging.number == i} ? 'active'">
+                        <a class="page-link" th:href="@{/product(page=${i})}" th:text="${i + 1}"></a>
+                    </div>
+                    <div class="page-item" th:classappend="${paging.number == paging.totalPages - 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/product(page=${paging.number + 1})}" aria-label="Next" th:text="'→'" />
+                    </div>
+                </ul>
+            </nav>
+    </div>
+
+    <div class="products-grid" id="products-container" >
+        <div class="product-card" th:each="product : ${products}">
+            <a th:href="@{/product/{productId}(productId=${product.getId()})}">
+                <img th:src="${product.getImageUrl()}" class="product-image">
+            </a>
+            <div class="product-info">
+                <a th:href="@{/product/{productId}(productId=${product.getId()})}">
+                    <h3 class="product-title" th:text="${product.getTitle()}" ></h3>
+                </a>
+                <div class="product-price" th:text="${product.getPrice()}+' руб.'"></div>
+                <div class="product-actions">
+                    <div th:if="${product.getItemId() != null}" class="quantity-controls">
+                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, redirectTo = 'product')}" method="post">
+                            <button class="quantity-btn" name ="quantity" value="-1" >-</button>
+                            <span class="quantity" th:text="${product.getCount()}"></span>
+                            <button class="quantity-btn" name ="quantity"  value="1">+</button>
+                        </form>
+                    </div>
+
+                    <form th:if="${product.getItemId() != null}" th:action="@{/cart/item/{id}/delete(id=${product.getItemId()}, redirectTo = 'product')}" method="post">
+                        <button  class="remove-from-cart">Удалить</button>
+                    </form>
+                    <form th:if="${product.getItemId() == null}"  th:action="@{/cart/{productId}/addItem(productId=${product.getId()}, redirectTo = 'product')}" method="post">
+                        <button class="add-to-cart" >В корзину</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 
 </html>
