@@ -34,10 +34,12 @@
                     <div class="item-description" th:text="${product.getDescription()}"></div>
                     <div class="item-actions">
                         <div th:if="${product.getItemId() != null}" class="quantity-controls">
-                            <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, redirectTo = 'product/{productId}')}" method="post">
-                                <button class="quantity-btn" name ="quantity" value="-1" >-</button>
+                            <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=-1, redirectTo = 'product/{productId}')}" method="post">
+                                <button class="quantity-btn" >-</button>
+                            </form>
                                 <span class="quantity" th:text="${product.getCount()}"></span>
-                                <button class="quantity-btn" name ="quantity"  value="1">+</button>
+                            <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=1, redirectTo = 'product/{productId}')}" method="post">
+                                <button class="quantity-btn">+</button>
                             </form>
                         </div>
 

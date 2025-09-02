@@ -1,17 +1,18 @@
 package ru.yandex.practicum.mvc_internet_shop.controller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.yandex.practicum.mvc_internet_shop.model.dto.OrderDTO;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.mvc_internet_shop.service.OrderService;
 
-import java.util.List;
+import java.net.URI;
 
 @Controller
 @AllArgsConstructor
@@ -23,33 +24,40 @@ public class OrderController {
      * Оформление заказа
      * */
     @PostMapping
-    public String createOrder(
-            RedirectAttributes redirectAttributes) {
-        OrderDTO order = orderService.addNewOrder();
-        redirectAttributes.addAttribute("orderId", order.getId());
-        return "redirect:/orders/{orderId}"; // Открывает страницу с заказом
+    public Mono<ResponseEntity<Void>> createOrder() {
+        return orderService.addNewOrder()
+                .flatMap(order -> {
+                    return Mono.just(ResponseEntity.status(HttpStatus.FOUND)
+                            .location(URI.create("/orders/" + order.getId()))
+                            .build());
+                });
     }
 
     /**
      * Получение списка заказов
      * */
     @GetMapping
-    public String getOrders(
+    public Mono<String> getOrders(
             Model model) {
-        List<OrderDTO> dto = orderService.findAllCompletedOrder();
-        model.addAttribute("orders", dto);
-        return "orders"; // Открывает страницу с заказом
+        return orderService.findAllCompletedOrder()
+                .collectList()
+                .doOnNext(orders -> {
+                    model.addAttribute("orders", orders);
+                    model.addAttribute("ordersCount", orders.size());
+                })
+                .then(Mono.just("orders"));
+
     }
 
     /**
      * Получение заказа по идентификатору
      * */
     @GetMapping("/{orderId}")
-    public String getOrderById(
+    public Mono<String> getOrderById(
             @PathVariable int orderId,
             Model model) {
-        OrderDTO dto = orderService.findById(orderId);
-        model.addAttribute("order", dto);
-        return "order"; // Открывает страницу с заказом
+        return orderService.findById(orderId)
+                .doOnNext(order -> model.addAttribute("order", order)) // Передаём готовый объект в модель
+                .map(order -> "order"); // Открывает страницу с заказом
     }
 }

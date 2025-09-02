@@ -1,65 +1,106 @@
 package ru.yandex.practicum.mvc_internet_shop.controller;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import ru.yandex.practicum.mvc_internet_shop.model.dto.OrderDTO;
 import ru.yandex.practicum.mvc_internet_shop.model.enums.OrderStatus;
 import ru.yandex.practicum.mvc_internet_shop.service.OrderService;
 import ru.yandex.practicum.mvc_internet_shop.utils.TestDataUtils;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
+import java.util.List;
 
-@WebMvcTest(OrderController.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@WebFluxTest(OrderController.class)
 public class OrderControllerTest {
 
+    @Autowired
+    private WebTestClient webTestClient;
     @MockitoBean
     private OrderService orderService;
-    @Autowired
-    private MockMvc mockMvc;
-
     private TestDataUtils testData = new TestDataUtils();
 
     //Оформление заказа
     @Test
     void createOrder_shouldReturnHtmlWithOrderInfo() throws Exception  {
-        Mockito.when(orderService.addNewOrder()).thenReturn(testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent()));
-        mockMvc.perform(post("/orders" ))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/orders/1"));
+        OrderDTO createOrder = testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent());
+        Mockito.when(orderService.addNewOrder())
+                .thenReturn(Mono.just(createOrder));
+        webTestClient.post().uri("/orders")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().valueEquals("Location", "/orders/1");
+
     }
 
     //Получение списка заказов getOrders
     @Test
     void getOrders_shouldReturnHtmlWithListOrder() throws Exception  {
-        Mockito.when(orderService.findAllCompletedOrder()).thenReturn(testData.getListOrder());
-        mockMvc.perform(get("/orders"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("orders"))
-                .andExpect(model().attributeExists("orders"))
-                .andExpect(xpath("//div[@id='order-list']/div").nodeCount(3));
+        List<OrderDTO> createOrder = testData.getListOrder();
+        Mockito.when(orderService.findAllCompletedOrder()).thenReturn(Flux.fromIterable(createOrder));
+        webTestClient.get().uri("/orders")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+
+                    // Парсинг HTML с Jsoup
+                    Document doc = Jsoup.parse(body);
+
+                    // Проверка количества заказов
+                    Elements orderElements = doc.select("#order-list > div");
+                    assertEquals(3, orderElements.size());
+
+
+                    Element firstOrder = orderElements.first();
+                    assertNotNull(firstOrder);
+                    // Проверка титульника заказа
+                    Element titleElement = firstOrder.selectFirst("div > a");
+                    assertNotNull(titleElement);
+                    assertEquals("Заказ №1", titleElement.text());
+
+                    assertTrue(body.contains("orders"));
+                });
     }
 
     //Получение заказа по идентификатору getOrders
     @Test
     void getOrderById_shouldReturnHtmlWithOrderInfo() throws Exception  {
-        Mockito.when(orderService.findById(any())).thenReturn(testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent()));
-        mockMvc.perform(get("/orders/{orderId}", 1))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("order"))
-                .andExpect(model().attributeExists("order"))
-                .andExpect(xpath("//div[@id='order-title']/a").string("Заказ № 1"));
+        OrderDTO createOrder = testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent());
+        Mockito.when(orderService.findById(1)).thenReturn(Mono.just(createOrder));
+        webTestClient.get().uri("/orders/{orderId}", 1)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+
+                    // Парсинг HTML с Jsoup
+                    Document doc = Jsoup.parse(body);
+
+                    // Проверка количества заказов
+                    Elements orderElements = doc.select("#order-title > a");
+                    assertEquals("Заказ № 1", orderElements.text());
+
+                    assertTrue(body.contains("orders"));
+                });
     }
 }

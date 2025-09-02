@@ -1,19 +1,21 @@
 package ru.yandex.practicum.mvc_internet_shop.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.mvc_internet_shop.model.Product;
 
 import java.util.List;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Integer> {
+public interface ProductRepository extends R2dbcRepository<Product, Integer> {
 
 
-    @Query(nativeQuery = true,
-            value = "select * from t_products\n" +
+    @Query("select * from t_products\n" +
                     "where COALESCE(:search, '') = '' " +
                     "OR lower(title) like lower(CONCAT('%',:search,'%')) " +
                     "OR lower(description) like lower(CONCAT('%',:search,'%'))\n" +
@@ -23,14 +25,13 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
                     "            CASE WHEN :sort = 'price desc' THEN price END DESC,\n" +
                     "            id ASC" +
                     " LIMIT :size OFFSET :offset")
-    List<Product> findByFilter(@Param(value = "size") int size,
+    Flux<Product> findByFilter(@Param(value = "size") int size,
                                @Param(value = "offset") int offset,
                                @Param(value = "search") String search,
                                @Param(value = "sort") String sort);
 
-    @Query(nativeQuery = true,
-            value = "select COUNT(*) from t_products where :search IS NULL \n" +
+    @Query("select COUNT(*) from t_products where :search IS NULL \n" +
             " OR lower(title) like lower(CONCAT('%',:search,'%'))\n" +
             " OR lower(description) like lower(CONCAT('%',:search,'%'))")
-    long countTotalProduct(@Param(value = "search") String search);
+    Mono<Long> countTotalProduct(@Param(value = "search") String search);
 }

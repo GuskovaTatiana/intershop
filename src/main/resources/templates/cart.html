@@ -35,10 +35,12 @@
                 <div class="item-price" th:text="${product.getTotalPrice()}+' ₽'"></div>
                 <div class="item-actions">
                     <div th:if="${product.getItemId() != null}" class="quantity-controls">
-                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, redirectTo = 'cart')}" method="post">
-                            <button class="quantity-btn" name ="quantity" value="-1" >-</button>
+                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=-1, redirectTo = 'cart')}" method="post">
+                            <button class="quantity-btn" >-</button>
+                        </form>
                             <span class="quantity" th:text="${product.getCount()}"></span>
-                            <button class="quantity-btn" name ="quantity"  value="1">+</button>
+                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=1, redirectTo = 'cart')}" method="post">
+                            <button class="quantity-btn" >+</button>
                         </form>
                     </div>
                     <form th:if="${product.getItemId() != null}" th:action="@{/cart/item/{id}/delete(id=${product.getItemId()}, redirectTo = 'cart')}" method="post">
