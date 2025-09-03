@@ -1,26 +1,24 @@
 server:
   port: 8006
+  netty:
+    idle-timeout: 60s                     # Закрытие неактивных соединений через 60 секунд
+    connection-timeout: 30s               # Тайм-аут установки соединения
+    max-connections: 10000                # Максимальное количество одновременных соединений
+    validate-headers: true                # Проверка HTTP-заголовков
 spring:
   application:
-    name: mvc-internet-shop
-  jpa:
-    show_sql: true
-    generate-ddl: false
-    hibernate:
-      ddl-auto: none
-  datasource:
-    host: localhost
-    port: 5432
-    database: postgres
+    name: flex-internet-shop
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/postgres
     username: postgres
     password: postgres
-    url: jdbc:postgresql://${spring.datasource.host}:${spring.datasource.port}/${spring.datasource.database}?autoReconnect=true
-    hikari:
-      maximumPoolSize: 6
-      minimumIdle: 4
-      driverClassName: org.postgresql.Driver
-      jdbcUrl: ${spring.datasource.url}
-  liquibase:
-    change-log: classpath:changelog/db.changelog-master.xml
-    enabled: true
-    default-schema: public
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 15
+      max-idle-time: 30s
+      max-life-time: 10m
+      validation-query: SELECT 1
+  sql:
+    init:
+      mode: always

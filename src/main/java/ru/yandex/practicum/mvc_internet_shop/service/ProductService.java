@@ -7,6 +7,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.mvc_internet_shop.mapper.ProductMapper;
 import ru.yandex.practicum.mvc_internet_shop.model.Product;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.FilterProductDTO;
@@ -14,6 +16,7 @@ import ru.yandex.practicum.mvc_internet_shop.model.dto.OrderDTO;
 import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
 import ru.yandex.practicum.mvc_internet_shop.model.exception.BadRequestException;
 import ru.yandex.practicum.mvc_internet_shop.repository.ProductRepository;
+import ru.yandex.practicum.mvc_internet_shop.repository.ProductsInOrderRepository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,44 +27,39 @@ import java.util.Map;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductsInOrderRepository productsInOrderRepository;
     private final ProductMapper productMapper;
     private final OrderService orderService;
 
-    /**
-     * Получение полного списка товаров
-     **/
-    public List<ProductDTO> findAll() {
-        OrderDTO order = orderService.getOrderInCart();
-        List<ProductDTO> productsInOrder = order.getProducts();
-
-        List<Product> products = productRepository.findAll();
-        Map<Integer, Integer> mapCountProduct = getCountToProductInCart(productsInOrder);
-        Map<Integer, Integer> mapItemIdProduct = getItemIdToProductInCart(productsInOrder);
-        return productMapper.toDto(products, mapCountProduct, mapItemIdProduct);
-    }
 
     /**
      * Получение списка продуктов c паджинацией
      * */
-    public Page<ProductDTO> getProductsByFilter(FilterProductDTO filter) {
+    public Mono<Page<ProductDTO>> getProductsByFilter(FilterProductDTO filter) {
         // получаем/создаем заказ в статусе Create
-        OrderDTO order = orderService.getOrderInCart();
-        List<ProductDTO> productsInOrder = order.getProducts();
-
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize());
-        int pageSize = pageable.getPageSize();
-        int pageNumber = pageable.getPageNumber();
+        String searchSqlText = StringUtils.hasText(filter.getSearch()) ? filter.getSearch() : null;
+        String sort = StringUtils.hasText(filter.getSort()) ? filter.getSort() : null;
 
-        String searchSqlText = filter.getSearch().isEmpty() ? null : filter.getSearch();
-        long totalPage =  productRepository.countTotalProduct(searchSqlText);
-        List<Product> products = productRepository.findByFilter(pageSize, pageSize * pageNumber, searchSqlText, filter.getSort());
-        //собираем маппинг с количеством продукта в корзине
-        Map<Integer, Integer> mapCountProduct = getCountToProductInCart(productsInOrder);
-        //собираем маппинг с идентификатором элемента в корзине
-        Map<Integer, Integer> mapItemIdProduct = getItemIdToProductInCart(productsInOrder);
-        //формируем dto
-        List<ProductDTO> dto = productMapper.toDto(products, mapCountProduct, mapItemIdProduct);
-        return new PageImpl<>(dto, pageable, totalPage);
+        return orderService.getOrderInCart()
+                .zipWith(productRepository.countTotalProduct(searchSqlText))
+                .zipWith(productRepository.findByFilter(
+                        pageable.getPageSize(),
+                        pageable.getPageSize() * pageable.getPageNumber(),
+                        searchSqlText,
+                        sort
+                ).collectList())
+                .map(tuple -> {
+                    OrderDTO order = tuple.getT1().getT1();
+                    Long totalCount = tuple.getT1().getT2();
+                    List<Product> products = tuple.getT2();
+
+                    Map<Integer, Integer> countMap = getCountToProductInCart(order.getProducts());
+                    Map<Integer, Integer> itemIdMap = getItemIdToProductInCart(order.getProducts());
+
+                    List<ProductDTO> dtoList = productMapper.toDto(products, countMap, itemIdMap);
+                    return new PageImpl<>(dtoList, pageable, totalCount);
+                });
     }
 
     /**
@@ -85,20 +83,17 @@ public class ProductService {
     /**
      * Получение продукта по идентификатору
      * */
-    public ProductDTO getProductById(Integer id) {
-        OrderDTO order = orderService.getOrderInCart();
-        List<ProductDTO> productsInOrder = order.getProducts();
-
-        Product product = productRepository.findById(id).orElseThrow(() -> new BadRequestException("Incorrect product id"));
-        if (productsInOrder != null && !productsInOrder.isEmpty()) {
-            productsInOrder = productsInOrder.stream().filter(it -> it.getId().equals(id)).toList();
+    public Mono<ProductDTO> getProductById(Integer id) {
+        return productRepository.findById(id)
+                .switchIfEmpty(Mono.error(new BadRequestException("Incorrect product id")))
+                .flatMap(product ->
+                        orderService.getOrderInCart()
+                                .flatMap(order ->
+                                        orderService.findByOrderIdAndProductId(order.getId(), product.getId())
+                                                .map(item -> productMapper.toDto(product, item.getProductCount(), item.getId()))
+                                )
+                                .defaultIfEmpty(productMapper.toDto(product, null, null)) // Если продукта нет в корзине
+                );
         }
-        if (productsInOrder != null && !productsInOrder.isEmpty()) {
-            return productMapper.toDto(product, productsInOrder.get(0).getCount(), productsInOrder.get(0).getItemId());
-        } else {
-            return productMapper.toDto(product,null, null);
-        }
-    }
-
 
 }

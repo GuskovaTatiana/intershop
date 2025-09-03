@@ -7,10 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
 import org.springframework.test.context.ActiveProfiles;
+
 import ru.yandex.practicum.mvc_internet_shop.model.dto.FilterProductDTO;
-import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
 import ru.yandex.practicum.mvc_internet_shop.utils.TestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,30 +43,40 @@ public class ProductServiceTest {
     @Test
     void getProductsByFilter_shouldReturnListProduct() {
         FilterProductDTO filter = new FilterProductDTO(0, 10, "", "title asc");
-        Page<ProductDTO> products = productService.getProductsByFilter(filter);
-
-        assertNotNull(products.getContent());
-        assertEquals(10, products.getContent().size());
+        productService.getProductsByFilter(filter)
+                .doOnNext(products -> {
+                    assertNotNull(products.getContent());
+                    assertEquals(10, products.getContent().size());
+                })
+                .block();
     }
 
     // получение товара по идентификатору
     @Test
     void getProductById_shouldReturnProductById() {
-        ProductDTO product = productService.getProductById(21);
-        assertNotNull(product);
-        assertEquals(21, product.getId());
-        assertEquals("Детский компьютер обучающий", product.getTitle());
-        assertNotNull(product.getItemId());
-        assertEquals(1, product.getCount());
+        Integer productId = 21;
+        productService.getProductById(productId)
+                        .doOnSuccess(product -> {
+                            assertNotNull(product);
+                            assertEquals(productId, product.getId());
+                            assertEquals("Детский компьютер обучающий", product.getTitle());
+                            assertNotNull(product.getItemId());
+                            assertEquals(1, product.getCount());
+                        })
+                .block();
+
     }
 
-    // получение товара по идентификатору
+    // получение товара по идентификатору ен находящегося в корзине
     @Test
     void getProductById_shouldReturnProductByIdWithOutItem() {
-        ProductDTO product = productService.getProductById(1);
-        assertNotNull(product);
-        assertEquals(1, product.getId());
-        assertNull(product.getItemId());
-        assertNull(product.getCount());
+        Integer productId = 25;
+        productService.getProductById(productId).doOnSuccess(product -> {
+                    assertNotNull(product);
+                    assertEquals(productId, product.getId());
+                    assertNull(product.getItemId());
+                    assertNull(product.getCount());
+        }).block();
+
     }
 }

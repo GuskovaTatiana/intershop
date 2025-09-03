@@ -21,6 +21,6 @@ public class OrderMapper {
     }
 
     public List<OrderDTO> toDto(List<Order> orders) {
-        return orders.stream().map(it -> toDto(it)).toList();
+        return orders.stream().map(this::toDto).toList();
     }
 }

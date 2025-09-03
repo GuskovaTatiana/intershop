@@ -1,58 +1,99 @@
 package ru.yandex.practicum.mvc_internet_shop.controller;
 
-
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
+import ru.yandex.practicum.mvc_internet_shop.model.dto.ProductDTO;
 import ru.yandex.practicum.mvc_internet_shop.service.ProductService;
 import ru.yandex.practicum.mvc_internet_shop.utils.TestDataUtils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
-@WebMvcTest(ProductController.class)
+@WebFluxTest(ProductController.class)
 public class ProductControllerTest {
 
+    @Autowired
+    private WebTestClient webTestClient;
     @MockitoBean
     private ProductService productService;
-    @Autowired
-    private MockMvc mockMvc;
+
     private TestDataUtils testData = new TestDataUtils();
 
     //Получение списка продуктов
     @Test
     void getListOfProducts_shouldReturnHtmlWithProducts() throws Exception  {
-        Mockito.when(productService.getProductsByFilter(any())).thenReturn(testData.getListProduct());
-        mockMvc.perform(get("/product")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("main"))
-                .andExpect(model().attributeExists("products"))
-                .andExpect(xpath("//div[@id='products-container']/div").nodeCount(3))
-                .andExpect(MockMvcResultMatchers.xpath("//div[@id='products-container']/div[1]/div/a/h3").string("Товар 1"));
+        Mockito.when(productService.getProductsByFilter(any())).thenReturn(Mono.just(testData.getListProduct()));
+        webTestClient.get().uri(uriBuilder -> uriBuilder
+                        .path("/product")
+                        .queryParam("page", "0")
+                        .queryParam("size", "10")
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+
+                    // Парсинг HTML с Jsoup
+                    Document doc = Jsoup.parse(body);
+
+                    // Проверка количества заказов
+                    Elements productContainerElements = doc.select("#products-container > div");
+                    assertEquals(3, productContainerElements.size());
+
+                    Element product = productContainerElements.first();
+                    assertNotNull(product);
+                    // Проверка титульника заказа
+                    Element titleElement = product.selectFirst("div > a > h3");
+                    assertNotNull(titleElement);
+                    assertEquals("Товар 1", titleElement.text());
+
+                    assertTrue(body.contains("products"));
+                });
     }
 
     //Открытие страницы с описанием продукта
     @Test
     void getProductById_shouldReturnHtmlWithProductInfo() throws Exception  {
-        Mockito.when(productService.getProductById(any())).thenReturn(testData.getProduct(3, "Товар 3", "/images/image3.png", "Описание 3", 25));
-        mockMvc.perform(get("/product/{productId}", 3))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType("text/html;charset=UTF-8"))
-                .andExpect(view().name("product"))
-                .andExpect(model().attributeExists("product"))
-                .andExpect(xpath("//div[@id='item']").nodeCount(1))
-                .andExpect(xpath("//div[@id='item']/h3").string("Товар 3"));
+        Integer productId = 3;
+        ProductDTO dto = testData.getProduct(productId, "Товар 3", "/images/image3.png", "Описание 3", 25);
+        Mockito.when(productService.getProductById(productId)).thenReturn(Mono.just(dto));
+        webTestClient.get().uri("/product/{productId}", 3)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+
+                    // Парсинг HTML с Jsoup
+                    Document doc = Jsoup.parse(body);
+
+                    // Проверка количества заказов
+                    Elements itemElements = doc.select("#item");
+                    assertEquals(1, itemElements.size());
+
+                    // Проверка титульника заказа
+                    Element titleElement = itemElements.selectFirst("h3");
+                    assertNotNull(titleElement);
+                    assertEquals("Товар 3", titleElement.text());
+
+                    assertTrue(body.contains("product"));
+                });
     }
 }
