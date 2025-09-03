@@ -76,34 +76,26 @@ public class OrderService {
         List<OrderStatus> status = Arrays.asList(OrderStatus.CREATE);
 
         return orderRepository.findFirstByStatusInAndDeletedIsFalseOrderByCreatedAtDesc(status)
-                .flatMap(latestOrder -> {
-                    // Найден существующий заказ - деактивируем остальные
-                    return deactivateOtherCreateOrders(latestOrder.getId())
-                            .then(Mono.just(latestOrder));
+                //удаляем лишниe заказы в статусе Create
+                .flatMap(order -> {
+                    return deactivateOtherCreateOrders(order)
+                            .thenReturn(order);
                 })
-                .flatMap(order ->
-                        productsInOrderRepository.findAllByOrderId(order.getId())
-                                .flatMap(item ->
-                                        productRepository.findById(item.getProductId())
-                                                .doOnNext(item::setProduct)
-                                                .thenReturn(item)
-                                )
-                                .collectList()
-                                .doOnNext(order::setProducts)
-                                .thenReturn(order)
-                )
-                .switchIfEmpty(
-                    // Заказ не найден - создаем новый
-                    createNewOrder()
-                );
+                //собираем список продуктов в корзине
+                .flatMap(order -> {
+                    return enrichOrderWithProducts(order)
+                            .thenReturn(order);
+                })
+                // Заказ не найден - создаем новый
+                .switchIfEmpty(createNewOrder());
     }
 
     /**
      * Деактивация старых заказов в статусе create
      * */
-    public Mono<Void> deactivateOtherCreateOrders(Integer excludedOrderId) {
+    public Mono<Void> deactivateOtherCreateOrders(Order excludedOrder) {
         return orderRepository.findByStatusInAndDeletedIsFalse(List.of(OrderStatus.CREATE))
-                .filter(order -> !order.getId().equals(excludedOrderId))
+                .filter(order -> !order.getId().equals(excludedOrder.getId()))
                 .doOnNext(order -> {
                     order.setDeleted(true);
                     order.setUpdatedAt(LocalDateTime.now());
@@ -115,6 +107,20 @@ public class OrderService {
                     }
                     return Mono.empty();
                 });
+    }
+
+    private Mono<Order> enrichOrderWithProducts(Order order) {
+        return productsInOrderRepository.findAllByOrderId(order.getId())
+                .flatMap(this::enrichOrderItemWithProduct)
+                .collectList()
+                .doOnNext(order::setProducts)
+                .thenReturn(order);
+    }
+
+    private Mono<ProductsInOrder> enrichOrderItemWithProduct(ProductsInOrder item) {
+        return productRepository.findById(item.getProductId())
+                .doOnNext(item::setProduct)
+                .thenReturn(item);
     }
 
     /**

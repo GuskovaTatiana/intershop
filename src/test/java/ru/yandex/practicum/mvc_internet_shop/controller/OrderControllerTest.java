@@ -41,7 +41,7 @@ public class OrderControllerTest {
                 .thenReturn(Mono.just(createOrder));
         webTestClient.post().uri("/orders")
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/orders/1");
 
     }

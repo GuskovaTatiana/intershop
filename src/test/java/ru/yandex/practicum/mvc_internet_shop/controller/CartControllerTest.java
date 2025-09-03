@@ -42,7 +42,7 @@ public class CartControllerTest {
                 .thenReturn(Mono.error(new RuntimeException("Service error"))); // второй вызов - ошибка
         webTestClient.post().uri("/cart/{productId}/addItem", 1)
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/product");
 
         // Verify
@@ -62,7 +62,7 @@ public class CartControllerTest {
 
         webTestClient.post().uri("/cart/{productId}/addItem?redirectTo={redirectTo}", productId, redirectTo)
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/product/" + productId);
     }
 
@@ -103,7 +103,7 @@ public class CartControllerTest {
                 .thenReturn(Mono.error(new RuntimeException("Service error"))); // второй вызов - ошибка
         webTestClient.post().uri("/cart/item/{id}/edit?quantity=1", 1)
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/product");
 
         // Verify
@@ -123,7 +123,7 @@ public class CartControllerTest {
 
         webTestClient.post().uri("/cart/item/{id}/edit?quantity=1&redirectTo={redirectTo}", itemId, redirectTo)
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/product/" + productId);
     }
 
@@ -138,7 +138,7 @@ public class CartControllerTest {
                 .thenReturn(Mono.error(new RuntimeException("Service error"))); // второй вызов - ошибка
         webTestClient.post().uri("/cart/item/{id}/delete", 1)
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/product");
     }
 
@@ -155,7 +155,7 @@ public class CartControllerTest {
 
         webTestClient.post().uri("/cart/item/{id}/delete?redirectTo={redirectTo}", itemId, redirectTo)
                 .exchange()
-                .expectStatus().isFound()
+                .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/product/" + productId);
     }
 

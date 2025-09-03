@@ -24,12 +24,11 @@ public class OrderController {
      * Оформление заказа
      * */
     @PostMapping
-    public Mono<ResponseEntity<Void>> createOrder() {
+    public Mono<String> createOrder() {
         return orderService.addNewOrder()
-                .flatMap(order -> {
-                    return Mono.just(ResponseEntity.status(HttpStatus.FOUND)
-                            .location(URI.create("/orders/" + order.getId()))
-                            .build());
+                .map(order -> {
+                    String redirectUrl = "orders/" + order.getId();
+                                return "redirect:/" + redirectUrl;
                 });
     }
 

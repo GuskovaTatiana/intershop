@@ -53,7 +53,7 @@ public class CartController {
      * Увеличение/ уменьшение количества продуктов
      * */
     @PostMapping("/item/{id}/edit")
-    public Mono<ResponseEntity<Void>> editCountProductFromOrder(
+    public Mono<String> editCountProductFromOrder(
             @PathVariable int id,
             @RequestParam Integer quantity,
             @RequestParam(defaultValue = "product") String redirectTo
@@ -61,9 +61,7 @@ public class CartController {
         return orderService.editProductInOrder(id, quantity)
                 .map(productId -> {
                     String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
-                    return ResponseEntity.status(HttpStatus.FOUND)
-                            .location(URI.create("/" + redirectUrl))
-                            .build();
+                    return "redirect:/" + redirectUrl;
                 });
     }
 
@@ -71,15 +69,13 @@ public class CartController {
      * Удаление продукта из корзины
      * */
     @PostMapping("/item/{id}/delete")
-    public Mono<ResponseEntity<Void>> deleteProductFromOrder(
+    public Mono<String> deleteProductFromOrder(
             @PathVariable int id,
             @RequestParam(defaultValue = "product") String redirectTo) {
         return orderService.deleteProductInOrder(id)
                 .map(productId -> {
                     String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
-                    return ResponseEntity.status(HttpStatus.FOUND)
-                            .location(URI.create("/" + redirectUrl))
-                            .build();
+                    return "redirect:/" + redirectUrl;
                 });
     }
 
@@ -87,14 +83,12 @@ public class CartController {
      * Добавление продукта в корзину
      * */
     @PostMapping("/{productId}/addItem")
-    public Mono<ResponseEntity<Void>> addProductToOrder(
+    public Mono<String> addProductToOrder(
             @PathVariable int productId,
             @RequestParam(defaultValue = "product") String redirectTo
     ) {
         return orderService.addProductInCart(productId, 1)
-                .thenReturn(ResponseEntity.status(HttpStatus.FOUND)
-                        .location(URI.create("/" + redirectTo.replace("{productId}", String.valueOf(productId))))
-                        .build());
+                .thenReturn("redirect:/" + redirectTo.replace("{productId}", String.valueOf(productId)));
     }
 
 }
