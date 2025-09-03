@@ -4,4 +4,4 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
-rootProject.name = 'mvc-internet-shop'
+rootProject.name = 'flex-internet-shop'

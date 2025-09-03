@@ -7,7 +7,7 @@ server:
     validate-headers: true                # Проверка HTTP-заголовков
 spring:
   application:
-    name: mvc-internet-shop
+    name: flex-internet-shop
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/postgres
     username: postgres
