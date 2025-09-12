@@ -134,11 +134,27 @@
 }
 
 /* Боковая панель */
+.div-cart-summary {
+    flex: 3;
+}
+/* Боковая панель */
 .cart-summary {
     flex: 3;
     background: white;
     border-radius: 12px;
     padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    align-self: flex-start;
+    position: sticky;
+    top: 90px;
+}
+
+.balance-summary {
+    flex: 3;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 5px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     align-self: flex-start;
     position: sticky;
@@ -181,4 +197,81 @@
     width: 100%;
     cursor: pointer;
     transition: background-color 0.2s;
+}
+
+
+/* Стили для модального окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+.balance-input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.balance-input:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+.top-up-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.top-up-btn:hover {
+    background-color: #45a049;
+}
+
+.balance-section {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.balance-amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+    margin: 10px 0;
 }
