@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: payment-service
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379

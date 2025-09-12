@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  version: 1.0.0
+  description: API платежной системы, для оплаты заказов
+
+servers:
+  - url: http://localhost:8009/api
+    description: Платежная система
+
+paths:
+  /payments/balance:
+    get:
+      summary: Получение баланса
+      operationId: getBalance
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                title: BalanceResponse
+                properties:
+                  balance:
+                    type: integer
+        '404':
+          description: Баланс не найден
+        '500':
+          description: Платежная система недоступна
+    post:
+      summary: Пополнение баланса
+      operationId: setBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: AmountRequest
+              properties:
+                depositAmount:
+                  type: integer
+      responses:
+        '201':
+          description: Баланс успешно пополнен
+        '400':
+          description: Некорректный запрос
+          headers:
+            X-Error-Code:
+              schema:
+                type: string
+                example: "BALANCE_LIMIT_EXCEEDED"
+              description: Код ошибки
+            X-Error-Message:
+              schema:
+                type: string
+                example: "Превышен лимит пополнения"
+              description: Сообщение об ошибке
+  /payments/process:
+    post:
+      summary: Списание средств
+      operationId: processPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: PaymentBody
+              properties:
+                amount:
+                  type: integer
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Некорректный запрос
+          headers:
+            X-Error-Code:
+              schema:
+                type: string
+                example: "BAD_REQUEST"
+              description: Код ошибки
+            X-Error-Message:
+              schema:
+                type: string
+                example: "Некорректная сумма списания"
+              description: Сообщение об ошибке
+components:
+  schemas:
+    PaymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        transactionId:
+          type: string
+          example: "erdkjgbdfvbkjdkd"
+        message:
+          type: string
+          example: "Successful"
