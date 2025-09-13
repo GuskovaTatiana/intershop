@@ -28,16 +28,21 @@ public class ProductServiceTest {
     @Autowired
     private ProductServiceImpl productService;
 
+    @Autowired
+    private CacheService cacheService;
+
     @BeforeAll
     void setupAll() {
         // Добавление тестовых данных
         testUtils.executeSQL("/sql/insert_data_to_bd.sql");
+        cacheService.clearCache().block();
     }
 
     @AfterAll
     void setDownAll() {
         // Удаление тестовых данных
         testUtils.executeSQL("/sql/clear_data_to_bd.sql");
+        cacheService.clearCache().block();
     }
 
     // получение списка товаров по фильтрам
@@ -50,6 +55,53 @@ public class ProductServiceTest {
                     assertEquals(10, products.getContent().size());
                 })
                 .block();
+    }
+
+    // получение списка товаров с проверкой наличия кэша
+    @Test
+    void getProductsByFilter_shouldReturnListProductAndUseCache() {
+        // 17 загружаются автоматом + 5 через sql
+        Integer productSize = 17 + 5;
+        FilterProductDTO filter = new FilterProductDTO(0, 10, "", "title asc");
+        productService.getProductsByFilter(filter).block();
+
+        cacheService.getListProductFromCache()
+                .doOnNext(products -> {
+                    assertNotNull(products);
+                    assertEquals(productSize, products.size());
+                }).block();
+
+    }
+
+    // получение товара по идентификатору с проверкой кэширования
+    @Test
+    void getProductById_shouldReturnProductByIdAndUseCache() {
+        Integer productId = 21;
+
+        // Первый вызов - должен загрузить из БД и сохранить в кэш
+        productService.getProductById(productId)
+                .doOnSuccess(product -> {
+                    assertNotNull(product);
+                    assertEquals(productId, product.getId());
+                    assertEquals("Детский компьютер обучающий", product.getTitle());
+                    assertNotNull(product.getItemId());
+                    assertEquals(1, product.getCount());
+                })
+                .block();
+
+        // Второй вызов - должен использовать кэш
+        productService.getProductById(productId)
+                .doOnSuccess(product -> {
+                    assertNotNull(product);
+                    assertEquals(productId, product.getId());
+                })
+                .block();
+
+        // Проверяем, что данные есть в кэше
+        cacheService.getProductByIdFromCache(productId).doOnNext(product -> {
+            assertNotNull(product);
+            assertEquals(productId, product.getId());
+        }).block();
     }
 
     // получение товара по идентификатору

@@ -3,6 +3,7 @@ package ru.yandex.practicum.shop.service;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.connection.RedisServerCommands;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -20,8 +21,6 @@ public class CacheService {
     private final ObjectMapper objectMapper;
     private static final Duration CACHE_TTL = Duration.ofMinutes(3);
     private static final String ALL_PRODUCTS_CACHE_KEY = "products:all";
-
-    private static final String ORDER_PRODUCTS_CACHE_KEY = "order:products:";
     private static final String PRODUCT_BY_ID_CACHE_KEY = "product:";
 
 
@@ -53,6 +52,14 @@ public class CacheService {
                     }
                     return Collections.<Product>emptyList();
                 });
+    }
+
+    public Mono<Boolean> clearCache() {
+        return redisTemplate.getConnectionFactory()
+                .getReactiveConnection()
+                .serverCommands()
+                .flushDb(RedisServerCommands.FlushOption.ASYNC) // ← ОЧИСТКА ВСЕГО REDIS!
+                .then(Mono.just(true));
     }
 //
 //    private List<Product> convertToProductList(Object obj) {
