@@ -76,8 +76,8 @@
                     <button class="checkout-btn">Заказать</button>
                 </form>
                 <div th:if="${total > balance}" class="insufficient-balance">
-                    <p style="color: #dc3545; font-weight: bold;">
-                        <i class="fas fa-exclamation-triangle"></i>
+                    <p style="color: #dc3545; font-weight: bold;" th:text="${errorMessage}">
+                        <i class="fas fa-exclamation-triangle" ></i>
                         Недостаточно средств на балансе
                     </p>
                 </div>
@@ -87,7 +87,7 @@
                 </div>
             </div>
             <!-- Блок с балансом -->
-            <div class="balance-summary">
+            <div class="balance-summary" th:if="${!paymentServiceUnavailable}">
                     <div class="summary-row">
                         <h3>Баланс</h3>
                         <h3 th:text="${balance} + '₽'"></h3>

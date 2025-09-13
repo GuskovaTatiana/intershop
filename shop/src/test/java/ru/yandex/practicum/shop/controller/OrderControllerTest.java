@@ -16,7 +16,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.enums.OrderStatus;
-import ru.yandex.practicum.shop.service.OrderService;
+import ru.yandex.practicum.shop.service.impl.OrderServiceImpl;
 import ru.yandex.practicum.shop.service.PaymentServiceClient;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 
@@ -33,7 +33,7 @@ public class OrderControllerTest {
     @Autowired
     private WebTestClient webTestClient;
     @MockitoBean
-    private OrderService orderService;
+    private OrderServiceImpl orderService;
     private TestDataUtils testData = new TestDataUtils();
 
     @MockitoBean

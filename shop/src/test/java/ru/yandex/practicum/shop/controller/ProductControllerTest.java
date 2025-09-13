@@ -14,7 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
-import ru.yandex.practicum.shop.service.ProductService;
+import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,7 +28,7 @@ public class ProductControllerTest {
     @Autowired
     private WebTestClient webTestClient;
     @MockitoBean
-    private ProductService productService;
+    private ProductServiceImpl productService;
 
     private TestDataUtils testData = new TestDataUtils();
 

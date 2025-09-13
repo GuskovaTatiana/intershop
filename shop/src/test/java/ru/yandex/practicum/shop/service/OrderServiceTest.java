@@ -12,6 +12,8 @@ import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
 import ru.yandex.practicum.shop.model.enums.OrderStatus;
+import ru.yandex.practicum.shop.service.impl.OrderServiceImpl;
+import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 import ru.yandex.practicum.shop.utils.TestUtils;
 
@@ -28,10 +30,10 @@ import static org.mockito.ArgumentMatchers.any;
 public class OrderServiceTest {
 
     @Autowired
-    private OrderService orderService;
+    private OrderServiceImpl orderService;
 
     @Autowired
-    private ProductService productService;
+    private ProductServiceImpl productService;
 
     @MockitoBean
     private PaymentServiceClient paymentService;

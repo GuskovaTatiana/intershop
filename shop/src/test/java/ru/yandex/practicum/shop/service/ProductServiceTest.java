@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import ru.yandex.practicum.shop.model.dto.FilterProductDTO;
+import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 import ru.yandex.practicum.shop.utils.TestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,7 +26,7 @@ public class ProductServiceTest {
     private TestUtils testUtils;
 
     @Autowired
-    private ProductService productService;
+    private ProductServiceImpl productService;
 
     @BeforeAll
     void setupAll() {

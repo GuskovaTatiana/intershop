@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.FilterProductDTO;
-import ru.yandex.practicum.shop.service.ProductService;
+import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 
 
 @Controller
@@ -18,7 +18,7 @@ import ru.yandex.practicum.shop.service.ProductService;
 @RequestMapping("/product")
 public class ProductController {
 
-    private final ProductService productService;
+    private final ProductServiceImpl productService;
     private static FilterProductDTO filter = new FilterProductDTO(0, 10, "", "title asc");
 
     /**

@@ -11,21 +11,4 @@ import ru.yandex.practicum.api.DefaultApi;
 @RequiredArgsConstructor
 public class PaymentServiceClient extends DefaultApi {
 
-
-
-
-//
-//    public Mono<PaymentResponse> processPayment(String userId, BigDecimal amount, String orderId) {
-//        PaymentRequest request = new PaymentRequest()
-//                .userId(userId)
-//                .amount(amount)
-//                .orderId(orderId);
-//
-//        return paymentsApi.processPayment(Mono.just(request))
-//                .map(ResponseEntity::getBody)
-//                .onErrorResume(e -> {
-//                    log.error("Payment failed for order {}: {}", orderId, e.getMessage());
-//                    return Mono.error(new PaymentException("Payment service unavailable"));
-//                });
-//    }
 }
