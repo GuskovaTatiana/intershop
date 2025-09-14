@@ -10,5 +10,4 @@ import ru.yandex.practicum.api.DefaultApi;
 @Component
 @RequiredArgsConstructor
 public class PaymentServiceClient extends DefaultApi {
-
 }

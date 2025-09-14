@@ -5,6 +5,7 @@ info:
   description: API платежной системы, для оплаты заказов
 
 servers:
+  - url: http://payment-service:8009/api
   - url: http://localhost:8009/api
     description: Платежная система
 
