@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
+    <link rel="stylesheet" th:href="@{/css/cart_page_style.css}"/>
+    <title>Корзина товаров</title>
+</head>
+
+<body>
+<header>
+    <div class="container header-content">
+        <div class="logo">МАГАЗИН</div>
+        <div class="cart">
+            <a class="header_button" th:href="@{/product}">Каталог</a>
+            <a class="header_button" th:href="@{/orders}">Заказы </a>
+        </div>
+    </div>
+</header>
+<div class="container" >
+    <div th:if="${products != null && !products.isEmpty()}" class="cart-container">
+        <div class="cart-items" id="products-container">
+            <h2 class="cart-title">Корзина</h2>
+        <div class="cart-item" th:each="product : ${products}">
+            <a th:href="@{/product/{productId}(productId=${product.getId()})}">
+                <img th:src="${product.getImageUrl()}" alt="Товар" class="item-image"/>
+            </a>
+            <div class="item-details">
+                <a th:href="@{/product/{productId}(productId=${product.getId()})}">
+                    <h3 class="item-name" th:text="${product.getTitle()}"></h3>
+                </a>
+                <div class="item-price" th:text="${product.getTotalPrice()}+' ₽'"></div>
+                <div class="item-actions">
+                    <div th:if="${product.getItemId() != null}" class="quantity-controls">
+                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=-1, redirectTo = 'cart')}" method="post">
+                            <button class="quantity-btn" >-</button>
+                        </form>
+                            <span class="quantity" th:text="${product.getCount()}"></span>
+                        <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=1, redirectTo = 'cart')}" method="post">
+                            <button class="quantity-btn" >+</button>
+                        </form>
+                    </div>
+                    <form th:if="${product.getItemId() != null}" th:action="@{/cart/item/{id}/delete(id=${product.getItemId()}, redirectTo = 'cart')}" method="post">
+                        <button  class="remove-btn">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="div-cart-summary">
+            <!-- Боковая панель с итогами -->
+            <div class="cart-summary">
+                <h3 class="summary-title">Ваш заказ</h3>
+                <div class="summary-details">
+                    <div class="summary-row">
+                        <span th:text="'Товары (' + ${products.size()} + ')'"></span>
+                        <span th:text="${total} + '₽'"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Доставка</span>
+                        <span style="color: #27ae60;">Бесплатно</span>
+                    </div>
+                </div>
+                <div class="summary-total">
+                    <div class="summary-row">
+                        <span>Итого</span>
+                        <span th:text="${total} + '₽'"></span>
+                    </div>
+                </div>
+                <form th:action="@{/orders(amount=${total})}" method="post" th:if="${total <= balance}">
+                    <button class="checkout-btn">Заказать</button>
+                </form>
+                <div th:if="${total > balance}" class="insufficient-balance">
+                    <p style="color: #dc3545; font-weight: bold;" th:text="${errorMessage}">
+                        <i class="fas fa-exclamation-triangle" ></i>
+                        Недостаточно средств на балансе
+                    </p>
+                </div>
+                <div class="delivery-info">
+                    <p><i class="fas fa-truck"></i> Бесплатная доставка завтра</p>
+                    <p><i class="fas fa-info-circle"></i> Оформление до 22:00</p>
+                </div>
+            </div>
+            <!-- Блок с балансом -->
+            <div class="balance-summary" th:if="${!paymentServiceUnavailable}">
+                    <div class="summary-row">
+                        <h3>Баланс</h3>
+                        <h3 th:text="${balance} + '₽'"></h3>
+                    </div>
+                <button class="checkout-btn" onclick="openModal()">Пополнить баланс</button>
+            </div>
+        </div>
+
+    </div>
+    <div th:unless="${products != null && !products.isEmpty()}" class="cart-container">
+        <div class="cart-items">
+            <div class="cart-items">
+                <h2 class="cart-title">Корзина</h2>
+                <div class="empty-message">
+                    <span>Корзина пуста!</span>
+                </div>
+
+        </div>
+    </div>
+    </div>
+</div>
+<!-- Модальное окно пополнения баланса -->
+<div id="balanceModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>Пополнение баланса</h3>
+        <form th:action="@{cart/balance/replenishment(amount=${param.amount})}" method="post">
+            <input type="number"
+                   name="amount"
+                   class="balance-input"
+                   placeholder="Введите сумму"
+                   min="1"
+                   max="100000"
+                   required
+                   step="1">
+            <button type="submit" class="checkout-btn">Пополнить</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Функции для работы с модальным окном
+    function openModal() {
+        document.getElementById('balanceModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('balanceModal').style.display = 'none';
+    }
+
+    // Закрытие модального окна при клике вне его
+    window.onclick = function(event) {
+        const modal = document.getElementById('balanceModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // Обработка клавиши Escape
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+</script>
+</body>
+
+</html>
