@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.payment_service.model.PaymentTransaction;
 import ru.yandex.practicum.payment_service.model.exception.BadRequestException;
+import ru.yandex.practicum.payment_service.model.exception.IllegalArgumentException;
 
 import java.util.UUID;
 
@@ -46,12 +47,12 @@ public class PaymentService {
     public Mono<Integer> setBalance(Integer amount) {
         // Проверка на null входящего параметра
         if (amount == null) {
-            return Mono.error(new IllegalArgumentException("Amount cannot be null"));
+            return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Amount cannot be null"));
         }
 
         // Проверка на отрицательное значение
         if (amount < 0) {
-            return Mono.error(new IllegalArgumentException("Amount cannot be negative"));
+            return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Amount cannot be negative"));
         }
 
         return getData(BALANCE_KEY)
@@ -63,7 +64,7 @@ public class PaymentService {
                         return saveData(BALANCE_KEY, newBalance)
                                 .then(Mono.just(newBalance));
                     } else {
-                        return Mono.error(new BadRequestException("Exceeding the deposit limit"));
+                        return Mono.error(new BadRequestException("BALANCE_LIMIT_EXCEEDED", "Exceeding the deposit limit"));
                     }
                 })
                 .switchIfEmpty(Mono.defer(() -> {
@@ -78,12 +79,12 @@ public class PaymentService {
     public Mono<PaymentTransaction> processPayment(Integer debitAmount) {
         // Проверка на null входящего параметра
         if (debitAmount == null) {
-            return Mono.error(new IllegalArgumentException("Debit amount cannot be null"));
+            return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Debit amount cannot be null"));
         }
 
         // Проверка на отрицательное значение
         if (debitAmount < 0) {
-            return Mono.error(new IllegalArgumentException("Debit amount cannot be negative"));
+            return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Debit amount cannot be negative"));
         }
 
         return getData(BALANCE_KEY)

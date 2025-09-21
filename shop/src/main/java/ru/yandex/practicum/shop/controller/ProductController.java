@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.FilterProductDTO;
-import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
+import ru.yandex.practicum.shop.service.OrderService;
+import ru.yandex.practicum.shop.service.ProductService;
 
 
 @Controller
@@ -18,8 +19,8 @@ import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 @RequestMapping("/product")
 public class ProductController {
 
-    private final ProductServiceImpl productService;
-    private static FilterProductDTO filter = new FilterProductDTO(0, 10, "", "title asc");
+    private final ProductService productService;
+    private final OrderService orderService;
 
     /**
      * Получение списка продуктов
@@ -27,13 +28,15 @@ public class ProductController {
     @GetMapping
     public Mono<String> listProduct(@ModelAttribute FilterProductDTO productFilter,
                                     Model model) {
-        filter.copy(productFilter);
-        return productService.getProductsByFilter(filter)
-                .doOnNext(products -> {
+
+        return orderService.getOrderInCart()
+                .flatMap(order -> productService.getProductsByFilter(order, productFilter))
+                .flatMap(products -> {
                     model.addAttribute("products", products.getContent());
                     model.addAttribute("paging", products);
-                    model.addAttribute("filter", filter);
-                }).map(product -> "main"); // Открывает страницу со списком товаров
+                    model.addAttribute("filter", productFilter);
+                    return Mono.just("main");
+                });
     }
 
     /**
@@ -43,7 +46,8 @@ public class ProductController {
     public Mono<String> getProductById(
             @PathVariable int productId,
             Model model) {
-        return productService.getProductById(productId)
+        return orderService.getOrderInCart()
+                        .flatMap(order -> productService.getProductById(order.getId(), productId))
                 .doOnNext(product -> model.addAttribute("product", product)) // Передаём готовый объект в модель
                 .map(product -> "product");
     }

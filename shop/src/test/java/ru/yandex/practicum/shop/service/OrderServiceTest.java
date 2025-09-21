@@ -12,8 +12,6 @@ import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
 import ru.yandex.practicum.shop.model.enums.OrderStatus;
-import ru.yandex.practicum.shop.service.impl.OrderServiceImpl;
-import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 import ru.yandex.practicum.shop.utils.TestUtils;
 
@@ -30,10 +28,10 @@ import static org.mockito.ArgumentMatchers.any;
 public class OrderServiceTest {
 
     @Autowired
-    private OrderServiceImpl orderService;
+    private OrderService orderService;
 
     @Autowired
-    private ProductServiceImpl productService;
+    private ProductService productService;
 
     @MockitoBean
     private PaymentServiceClient paymentService;
@@ -155,7 +153,7 @@ public class OrderServiceTest {
 
         Integer productId = 21;
         // Получаем продукт и выполняем операции
-        ProductDTO product = productService.getProductById(productId)
+        ProductDTO product = productService.getProductById(any(), productId)
                 .doOnNext(p -> assertNotNull(p, "Продукт не должен быть null"))
                 .block();
 
@@ -190,7 +188,7 @@ public class OrderServiceTest {
         Integer productId = 21;
         Integer quantity = 5;
         // получаем продукт по идентификатору
-        ProductDTO product = productService.getProductById(productId)
+        ProductDTO product = productService.getProductById(any(), productId)
                 .doOnNext(p -> {
                     assertNotNull(p, "Продукт не должен быть null");
                     assertNotNull(p.getItemId());
@@ -227,7 +225,7 @@ public class OrderServiceTest {
         testUtils.executeSQL("/sql/reset-sequences.sql");
         Integer productId = 22;
         // получаем продукт по идентификатору
-        ProductDTO product = productService.getProductById(productId)
+        ProductDTO product = productService.getProductById(any(), productId)
                 .doOnNext(p -> assertNotNull(p)).block();
 
         //добавляем продукт в корзину

@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
-import ru.yandex.practicum.shop.service.impl.OrderServiceImpl;
+import ru.yandex.practicum.shop.service.OrderService;
 
 @Controller
 @AllArgsConstructor
 @RequestMapping("/orders")
 public class OrderController {
-    private final OrderServiceImpl orderService;
+    private final OrderService orderService;
 
     /**
      * Оформление заказа

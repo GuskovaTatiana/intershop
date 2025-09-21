@@ -10,11 +10,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.BalanceReplenishmentRequest;
+import ru.yandex.practicum.shop.model.dto.FilterProductDTO;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
-import ru.yandex.practicum.shop.service.impl.OrderServiceImpl;
+import ru.yandex.practicum.shop.service.OrderService;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,7 +27,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @RequestMapping("/cart")
 public class CartController {
-    private final OrderServiceImpl orderService;
+    private final OrderService orderService;
 
     /**
      * Открытие страницы Корзина
@@ -76,14 +78,19 @@ public class CartController {
     public Mono<String> editCountProductFromOrder(
             @PathVariable int id,
             @RequestParam Integer quantity,
+            @ModelAttribute FilterProductDTO productFilter,
             @RequestParam(defaultValue = "product") String redirectTo
           ) {
         return orderService.editProductInOrder(id, quantity)
                 .map(productId -> {
                     String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
+                    if (productFilter != null && redirectUrl.equals("product")){
+                        redirectUrl = buildRedirectUrl(redirectUrl, productFilter);
+                    }
                     return "redirect:/" + redirectUrl;
                 });
     }
+
 
     /**
      * Удаление продукта из корзины
@@ -91,30 +98,66 @@ public class CartController {
     @PostMapping("/item/{id}/delete")
     public Mono<String> deleteProductFromOrder(
             @PathVariable int id,
+            @ModelAttribute FilterProductDTO productFilter,
             @RequestParam(defaultValue = "product") String redirectTo) {
         return orderService.deleteProductInOrder(id)
                 .map(productId -> {
                     String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
+                    if (productFilter != null && redirectUrl.equals("product")){
+                        redirectUrl = buildRedirectUrl(redirectUrl, productFilter);
+                    }
                     return "redirect:/" + redirectUrl;
                 });
     }
 
-    /**
-     * Добавление продукта в корзину
-     * */
-    @PostMapping("/{productId}/addItem")
-    public Mono<String> addProductToOrder(
-            @PathVariable int productId,
-            @RequestParam(defaultValue = "product") String redirectTo
-    ) {
-        return orderService.addProductInCart(productId, 1)
-                .thenReturn("redirect:/" + redirectTo.replace("{productId}", String.valueOf(productId)));
-    }
+        /**
+         * Добавление продукта в корзину
+         * */
+        @PostMapping("/{productId}/addItem")
+        public Mono<String> addProductToOrder(
+                @PathVariable int productId,
+                @ModelAttribute FilterProductDTO productFilter,
+                @RequestParam(defaultValue = "product") String redirectTo
+        ) {
+            return orderService.addProductInCart(productId, 1)
+                    .then(Mono.fromCallable(() -> {
+                        String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
+
+                        // Добавляем параметры фильтра, если они есть
+                        if (productFilter != null && redirectTo.equals("product")) {
+                            redirectUrl = buildRedirectUrl(redirectUrl, productFilter);
+                        }
+
+                        return "redirect:/" + redirectUrl;
+                    }));
+        }
 
     @PostMapping("/balance/replenishment")
     public Mono<String> replenishmentBalance(@ModelAttribute BalanceReplenishmentRequest balance) {
         return orderService.setBalance(balance.getAmount())
                 .thenReturn("redirect:/cart");
+    }
+
+    private String buildRedirectUrl(String baseUrl, FilterProductDTO productFilter) {
+        if (productFilter == null) {
+            return baseUrl;
+        }
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath(baseUrl);
+
+        if (productFilter.getPage() != null) {
+            builder.queryParam("page", productFilter.getPage());
+        }
+        if (productFilter.getSize() != null) {
+            builder.queryParam("size", productFilter.getSize());
+        }
+        if (productFilter.getSearch() != null && !productFilter.getSearch().isEmpty()) {
+            builder.queryParam("search", productFilter.getSearch());
+        }
+        if (productFilter.getSort() != null && !productFilter.getSort().isEmpty()) {
+            builder.queryParam("sort", productFilter.getSort());
+        }
+
+        return builder.toUriString();
     }
 
 }

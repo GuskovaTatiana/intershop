@@ -43,14 +43,14 @@ public class PaymentController implements PaymentsApi {
                                 .success(transaction.getSuccess())
                                 .message(transaction.getMessage())
                         )
-                        .map(ResponseEntity::ok)
-                        .onErrorResume(IllegalArgumentException.class, e ->
-                                Mono.just(ResponseEntity.badRequest()
-                                        .header("X-Error-Code", "BAD_REQUEST")
-                                        .header("X-Error-Message", e.getMessage())
-                                        .build()))
-                        .onErrorResume(Exception.class, e ->
-                                Mono.just(ResponseEntity.internalServerError().build())));
+                        .map(ResponseEntity::ok));
+//                        .onErrorResume(IllegalArgumentException.class, e ->
+//                                Mono.just(ResponseEntity.badRequest()
+//                                        .header("X-Error-Code", "BAD_REQUEST")
+//                                        .header("X-Error-Message", e.getMessage())
+//                                        .build()))
+//                        .onErrorResume(Exception.class, e ->
+//                                Mono.just(ResponseEntity.internalServerError().build())));
     }
 
     @Override
@@ -62,18 +62,8 @@ public class PaymentController implements PaymentsApi {
                     }
                     return service.setBalance(request.getDepositAmount())
                         .then(Mono.just(ResponseEntity.created(null).<Void>build()));
-                 })
-                .onErrorResume(IllegalArgumentException.class, e ->
-                        Mono.just(ResponseEntity.badRequest()
-                                .header("X-Error-Code", "BAD_REQUEST")
-                                .header("X-Error-Message", e.getMessage())
-                                        .build()))
-                .onErrorResume(BadRequestException.class, e ->
-                        Mono.just(ResponseEntity.badRequest()
-                                .header("X-Error-Code", "BALANCE_LIMIT_EXCEEDED")
-                                .header("X-Error-Message", e.getMessage())
-                                .build()))
-                .onErrorResume(Exception.class, e ->
-                        Mono.just(ResponseEntity.internalServerError().build()));
+                 });
+//                .onErrorResume(Exception.class, e ->
+//                        Mono.just(ResponseEntity.internalServerError().build()));
     }
 }

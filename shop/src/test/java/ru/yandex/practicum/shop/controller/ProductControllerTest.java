@@ -14,7 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
-import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
+import ru.yandex.practicum.shop.service.ProductService;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,14 +28,14 @@ public class ProductControllerTest {
     @Autowired
     private WebTestClient webTestClient;
     @MockitoBean
-    private ProductServiceImpl productService;
+    private ProductService productService;
 
     private TestDataUtils testData = new TestDataUtils();
 
     //Получение списка продуктов
     @Test
     void getListOfProducts_shouldReturnHtmlWithProducts() throws Exception  {
-        Mockito.when(productService.getProductsByFilter(any())).thenReturn(Mono.just(testData.getListProduct()));
+        Mockito.when(productService.getProductsByFilter(any(), any())).thenReturn(Mono.just(testData.getListProduct()));
         webTestClient.get().uri(uriBuilder -> uriBuilder
                         .path("/product")
                         .queryParam("page", "0")
@@ -72,7 +72,7 @@ public class ProductControllerTest {
     void getProductById_shouldReturnHtmlWithProductInfo() throws Exception  {
         Integer productId = 3;
         ProductDTO dto = testData.getProduct(productId, "Товар 3", "/images/image3.png", "Описание 3", 25);
-        Mockito.when(productService.getProductById(productId)).thenReturn(Mono.just(dto));
+        Mockito.when(productService.getProductById(any(), productId)).thenReturn(Mono.just(dto));
         webTestClient.get().uri("/product/{productId}", 3)
                 .exchange()
                 .expectStatus().isOk()

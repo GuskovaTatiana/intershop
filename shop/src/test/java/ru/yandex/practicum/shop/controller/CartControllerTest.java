@@ -16,7 +16,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.enums.OrderStatus;
-import ru.yandex.practicum.shop.service.impl.OrderServiceImpl;
+import ru.yandex.practicum.shop.service.OrderService;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,7 +30,7 @@ public class CartControllerTest {
     @Autowired
     private WebTestClient webTestClient;
     @MockitoBean
-    private OrderServiceImpl orderService;
+    private OrderService orderService;
 
     private TestDataUtils testData = new TestDataUtils();
 

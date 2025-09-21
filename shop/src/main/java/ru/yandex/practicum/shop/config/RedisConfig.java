@@ -3,6 +3,7 @@ package ru.yandex.practicum.shop.config;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -14,32 +15,16 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import ru.yandex.practicum.shop.model.Product;
+
+import java.util.List;
 
 @Configuration
 public class RedisConfig {
-//    @Bean
-//    public ReactiveRedisTemplate<String, Object> reactiveRedisTemplate(
-//            ReactiveRedisConnectionFactory factory) {
-//
-//        Jackson2JsonRedisSerializer<Object> serializer =
-//                new Jackson2JsonRedisSerializer<>(Object.class);
-//
-//        RedisSerializationContext<String, Object> context =
-//                RedisSerializationContext.<String, Object>newSerializationContext()
-//                        .key(new StringRedisSerializer())
-//                        .value(serializer)
-//                        .hashKey(new StringRedisSerializer())
-//                        .hashValue(serializer)
-//                        .build();
-//
-//        return new ReactiveRedisTemplate<>(factory, context);
-//    }
-
 
     @Bean
     public ReactiveRedisTemplate<String, Object> reactiveRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
-
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -48,8 +33,6 @@ public class RedisConfig {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        // Создаем serializer с ObjectMapper через конструктор
-        // Используем GenericJackson2JsonRedisSerializer
         GenericJackson2JsonRedisSerializer serializer =
                 new GenericJackson2JsonRedisSerializer(objectMapper);
 
@@ -62,6 +45,43 @@ public class RedisConfig {
                         .build();
 
         return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    @Bean
+    public ReactiveRedisTemplate<String, List<Product>> productListRedisTemplate(
+            ReactiveRedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper) {
+
+        JavaType type = objectMapper.getTypeFactory()
+                .constructCollectionType(List.class, Product.class);
+
+        Jackson2JsonRedisSerializer<List<Product>> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, type);
+
+        RedisSerializationContext<String, List<Product>> context =
+                RedisSerializationContext.<String, List<Product>>newSerializationContext(new StringRedisSerializer())
+                        .value(serializer)
+                        .hashValue(serializer)
+                        .build();
+
+        return new ReactiveRedisTemplate<>(connectionFactory, context);
+    }
+
+    @Bean
+    public ReactiveRedisTemplate<String, Product> productRedisTemplate(
+            ReactiveRedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper) {
+
+        Jackson2JsonRedisSerializer<Product> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, Product.class);
+
+        RedisSerializationContext<String, Product> context =
+                RedisSerializationContext.<String, Product>newSerializationContext(new StringRedisSerializer())
+                        .value(serializer)
+                        .hashValue(serializer)
+                        .build();
+
+        return new ReactiveRedisTemplate<>(connectionFactory, context);
     }
 
 

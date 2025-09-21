@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import ru.yandex.practicum.payment_service.config.EmbeddedRedisConfiguration;
 import ru.yandex.practicum.payment_service.model.exception.BadRequestException;
+import ru.yandex.practicum.payment_service.model.exception.IllegalArgumentException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

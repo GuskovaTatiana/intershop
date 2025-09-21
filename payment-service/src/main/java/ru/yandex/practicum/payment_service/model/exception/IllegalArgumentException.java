@@ -1,23 +1,21 @@
 package ru.yandex.practicum.payment_service.model.exception;
 
-
-public class BadRequestException extends RuntimeException {
+public class IllegalArgumentException extends RuntimeException{
 
     private String errorCode;
-    public BadRequestException(String message) {
+    public IllegalArgumentException(String message) {
         super(message);
     }
 
-    public BadRequestException(String code, String message) {
+    public IllegalArgumentException(String code, String message) {
         super(message);
         this.errorCode = code;
     }
-    public BadRequestException(String message, Throwable cause) {
+    public IllegalArgumentException(String message, Throwable cause) {
         super(message, cause);
     }
 
     public String getErrorCode() {
         return errorCode;
     }
-
 }

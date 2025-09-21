@@ -5,8 +5,8 @@ info:
   description: API платежной системы, для оплаты заказов
 
 servers:
-  - url: http://payment-service:8009/api
   - url: http://localhost:8009/api
+  - url: http://payment-service:8009/api
     description: Платежная система
 
 paths:
@@ -25,10 +25,6 @@ paths:
                 properties:
                   balance:
                     type: integer
-        '404':
-          description: Баланс не найден
-        '500':
-          description: Платежная система недоступна
     post:
       summary: Пополнение баланса
       operationId: setBalance
@@ -45,19 +41,6 @@ paths:
       responses:
         '201':
           description: Баланс успешно пополнен
-        '400':
-          description: Некорректный запрос
-          headers:
-            X-Error-Code:
-              schema:
-                type: string
-                example: "BALANCE_LIMIT_EXCEEDED"
-              description: Код ошибки
-            X-Error-Message:
-              schema:
-                type: string
-                example: "Превышен лимит пополнения"
-              description: Сообщение об ошибке
   /payments/process:
     post:
       summary: Списание средств
@@ -79,19 +62,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentResponse'
-        '400':
-          description: Некорректный запрос
-          headers:
-            X-Error-Code:
-              schema:
-                type: string
-                example: "BAD_REQUEST"
-              description: Код ошибки
-            X-Error-Message:
-              schema:
-                type: string
-                example: "Некорректная сумма списания"
-              description: Сообщение об ошибке
 components:
   schemas:
     PaymentResponse:

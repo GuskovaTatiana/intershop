@@ -14,7 +14,7 @@ spring:
       port: 6379
   cache:
     redis:
-      time-to-live: PT5S    # TTL по умолчанию для кешей
+      time-to-live: PT1S    # TTL по умолчанию для кешей
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/postgres
     username: postgres
@@ -29,8 +29,3 @@ spring:
   sql:
     init:
       mode: always
-
-payment:
-  service:
-    base-url: http://localhost:8081/api
-    timeout: 5000

@@ -10,12 +10,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import ru.yandex.practicum.shop.model.dto.FilterProductDTO;
-import ru.yandex.practicum.shop.service.impl.ProductServiceImpl;
 import ru.yandex.practicum.shop.utils.TestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -26,7 +26,7 @@ public class ProductServiceTest {
     private TestUtils testUtils;
 
     @Autowired
-    private ProductServiceImpl productService;
+    private ProductService productService;
 
     @Autowired
     private CacheService cacheService;
@@ -49,7 +49,7 @@ public class ProductServiceTest {
     @Test
     void getProductsByFilter_shouldReturnListProduct() {
         FilterProductDTO filter = new FilterProductDTO(0, 10, "", "title asc");
-        productService.getProductsByFilter(filter)
+        productService.getProductsByFilter(any(), filter)
                 .doOnNext(products -> {
                     assertNotNull(products.getContent());
                     assertEquals(10, products.getContent().size());
@@ -63,7 +63,7 @@ public class ProductServiceTest {
         // 17 загружаются автоматом + 5 через sql
         Integer productSize = 17 + 5;
         FilterProductDTO filter = new FilterProductDTO(0, 10, "", "title asc");
-        productService.getProductsByFilter(filter).block();
+        productService.getProductsByFilter(any(), filter).block();
 
         cacheService.getListProductFromCache()
                 .doOnNext(products -> {
@@ -79,7 +79,7 @@ public class ProductServiceTest {
         Integer productId = 21;
 
         // Первый вызов - должен загрузить из БД и сохранить в кэш
-        productService.getProductById(productId)
+        productService.getProductById(any(), productId)
                 .doOnSuccess(product -> {
                     assertNotNull(product);
                     assertEquals(productId, product.getId());
@@ -90,7 +90,7 @@ public class ProductServiceTest {
                 .block();
 
         // Второй вызов - должен использовать кэш
-        productService.getProductById(productId)
+        productService.getProductById(any(), productId)
                 .doOnSuccess(product -> {
                     assertNotNull(product);
                     assertEquals(productId, product.getId());
@@ -108,7 +108,7 @@ public class ProductServiceTest {
     @Test
     void getProductById_shouldReturnProductById() {
         Integer productId = 21;
-        productService.getProductById(productId)
+        productService.getProductById(any(), productId)
                         .doOnSuccess(product -> {
                             assertNotNull(product);
                             assertEquals(productId, product.getId());
@@ -124,7 +124,7 @@ public class ProductServiceTest {
     @Test
     void getProductById_shouldReturnProductByIdWithOutItem() {
         Integer productId = 25;
-        productService.getProductById(productId).doOnSuccess(product -> {
+        productService.getProductById(any(), productId).doOnSuccess(product -> {
                     assertNotNull(product);
                     assertEquals(productId, product.getId());
                     assertNull(product.getItemId());

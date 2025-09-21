@@ -13,21 +13,27 @@ public class FilterProductDTO {
     private String search; // Строка поиска по Названию или описанию
     private String sort; // Сортировка
 
-
-    public void copy(FilterProductDTO empty) {
-        if (empty.getPage() != null) {
-            this.page = empty.getPage();
-        }
-        if (empty.getSize() != null) {
-            this.size = empty.getSize();
-            this.page = 0;
-        }
-        if (empty.getSearch() != null) {
-            this.search = empty.getSearch();
-            this.page = 0;
-        }
-        if (empty.getSort() != null) {
-            this.sort = empty.getSort();
-        }
+    public FilterProductDTO() {
+        this.page = 0;
+        this.size = 10;
+        this.search = "";
+        this.sort = "title asc";
     }
+
+//    public void copy(FilterProductDTO empty) {
+//        if (empty.getPage() != null) {
+//            this.page = empty.getPage();
+//        }
+//        if (empty.getSize() != null) {
+//            this.size = empty.getSize();
+//            this.page = 0;
+//        }
+//        if (empty.getSearch() != null) {
+//            this.search = empty.getSearch();
+//            this.page = 0;
+//        }
+//        if (empty.getSort() != null) {
+//            this.sort = empty.getSort();
+//        }
+//    }
 }
