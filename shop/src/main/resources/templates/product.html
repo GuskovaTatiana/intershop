@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8" />
@@ -16,8 +17,8 @@
         <div class="logo">МАГАЗИН</div>
         <div class="cart">
             <a class="header_button" th:href="@{/product}">Каталог </a>
-            <a class="header_button" th:href="@{/orders}">Заказы </a>
-            <a class="header_button" th:href="@{/cart}">Корзина</a>
+            <a class="header_button" th:href="@{/orders}" th:if="${#authentication != null and #authentication.authenticated}">Заказы </a>
+            <a class="header_button" th:href="@{/cart}" th:if="${#authentication != null and #authentication.authenticated}">Корзина</a>
         </div>
     </div>
 </header>
@@ -32,7 +33,7 @@
                     <div class="item-price" th:text="${product.getPrice()}+' ₽'"></div>
                     <h3 class="item-block">Описание</h3>
                     <div class="item-description" th:text="${product.getDescription()}"></div>
-                    <div class="item-actions">
+                    <div class="item-actions" th:if="${#authentication != null and #authentication.authenticated}">
                         <div th:if="${product.getItemId() != null}" class="quantity-controls">
                             <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, quantity=-1, redirectTo = 'product/{productId}')}" method="post">
                                 <button class="quantity-btn" >-</button>

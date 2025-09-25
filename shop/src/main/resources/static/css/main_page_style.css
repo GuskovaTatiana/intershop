@@ -48,6 +48,7 @@ header {
     color: white;
     border-radius: 4px;
     cursor: pointer;
+    display: flex;
 }
 
 .filters {

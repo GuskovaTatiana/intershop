@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -38,15 +39,16 @@ public class OrderService {
     private final PaymentServiceClient paymentService;
     private final ProductService productService;
     private final OrderMapper orderMapper;
+    private final UserService userService;
 
 
 
     /**
      * Получение списка оформленных заказов
      * */
-    public Flux<OrderDTO> findAllCompletedOrder() {
+    public Flux<OrderDTO> findAllCompletedOrder(Integer userId) {
         List<OrderStatus> status= Arrays.asList(OrderStatus.IN_PROGRESS, OrderStatus.CLOSED);
-        return orderRepository.findByStatusInAndDeletedIsFalse(status)
+        return orderRepository.findByUserIdAndStatusInAndDeletedIsFalse(userId, status)
                 .distinct(Order::getId)
                 .flatMap(this::findProductsInOrder)
                 .sort(Comparator.comparing(Order::getId))
@@ -56,13 +58,13 @@ public class OrderService {
     /**
      * Оформление заказа
      * */
-    public Mono<OrderDTO> addNewOrder(Integer amount) {
+    public Mono<OrderDTO> addNewOrder(Integer userId, Integer amount) {
         PaymentBody payment =  new PaymentBody();
         payment.setAmount(amount);
-        return paymentService.processPayment(payment)
+        return paymentService.processPayment(userId, payment)
                 .flatMap(result -> {
                     if (result.getSuccess() == true) {
-                        return getOrCreateCartOrderWithCleanup()
+                        return getOrCreateCartOrderWithCleanup(userId)
                                 .flatMap(order -> {
                                     order.setStatus(OrderStatus.IN_PROGRESS);
                                     order.setUpdatedAt(LocalDateTime.now());
@@ -78,10 +80,10 @@ public class OrderService {
     /**
      * Получение/создание заказа в статусе Create (корзина)
      * */
-    public Mono<Order> getOrCreateCartOrderWithCleanup() {
+    public Mono<Order> getOrCreateCartOrderWithCleanup(Integer userId) {
         List<OrderStatus> status = Arrays.asList(OrderStatus.CREATE);
 
-        return orderRepository.findFirstByStatusInAndDeletedIsFalseOrderByCreatedAtDesc(status)
+        return orderRepository.findFirstByStatusInAndDeletedIsFalseOrderByCreatedAtDesc(userId, status)
                 //удаляем лишниe заказы в статусе Create
                 .flatMap(order -> {
                     return deactivateOtherCreateOrders(order)
@@ -90,14 +92,14 @@ public class OrderService {
                 //собираем список продуктов в корзине
                 .flatMap(this::findProductsInOrder)
                 // Заказ не найден - создаем новый
-                .switchIfEmpty(createNewOrder());
+                .switchIfEmpty(createNewOrder(userId));
     }
 
     /**
      * Деактивация старых заказов в статусе create
      * */
     public Mono<Void> deactivateOtherCreateOrders(Order excludedOrder) {
-        return orderRepository.findByStatusInAndDeletedIsFalse(List.of(OrderStatus.CREATE))
+        return orderRepository.findByUserIdAndStatusInAndDeletedIsFalse(excludedOrder.getUserId(), List.of(OrderStatus.CREATE))
                 .filter(order -> !order.getId().equals(excludedOrder.getId()))
                 .doOnNext(order -> {
                     order.setDeleted(true);
@@ -115,8 +117,9 @@ public class OrderService {
     /**
      * Создание нового заказа для заполнения
      * */
-    public Mono<Order> createNewOrder() {
+    public Mono<Order> createNewOrder(Integer userId) {
         Order order = new Order();
+        order.setUserId(userId);
         order.setStatus(OrderStatus.CREATE);
         return orderRepository.save(order)
                 .doOnSuccess(savedOrder -> log.info("Order created with ID: {}", savedOrder.getId()))
@@ -127,19 +130,33 @@ public class OrderService {
     /**
      * Получение не оформленного заказа (из корзины)
      * */
-    public Mono<OrderDTO> getOrderInCart() {
-        return getOrCreateCartOrderWithCleanup()
+    public Mono<OrderDTO> getOrderInCart(Integer userId) {
+        return getOrCreateCartOrderWithCleanup(userId)
                 .map(orderMapper::toDto);
     }
 
     /**
      * Получение заказа по идентификатору
      * */
-    public Mono<OrderDTO> findById(Integer id) {
+    public Mono<OrderDTO> findById(Integer id, Integer userId) {
         return orderRepository.findById(id)
                 .switchIfEmpty(Mono.error(new BadRequestException("Incorrect order id")))
-                .flatMap(this::findProductsInOrder)
-                .map(orderMapper::toDto);
+                .flatMap(order -> {
+                    // Проверяем, что order и его userId не null
+                    if (order.getUserId() == null || !order.getUserId().equals(userId)) {
+                        return Mono.error(new BadRequestException("Order does not belong to the user"));
+                    }
+                    return findProductsInOrder(order)
+                            .map(orderMapper::toDto);
+                });
+    }
+
+    /**
+     * Получение корзины по идентификатору
+     * */
+    public Mono<Order> findCartById(Integer id) {
+        return orderRepository.findOrderByIdAndStatus(id, List.of(OrderStatus.CREATE))
+                .switchIfEmpty(Mono.error(new BadRequestException("Incorrect order id")));
     }
 
     /**
@@ -184,8 +201,8 @@ public class OrderService {
     /**
      * Добавление/обновление товара в корзину
      * */
-    public Mono<Void> addProductInCart(Integer productId, Integer countProduct) {
-        return getOrderInCart().flatMap(order ->
+    public Mono<Void> addProductInCart(Integer userId, Integer productId, Integer countProduct) {
+        return getOrderInCart(userId).flatMap(order ->
             productsInOrderRepository.findFirstByOrderIdAndProductId(order.getId(), productId)
                     .hasElement()
                     .flatMap(exist -> {
@@ -216,23 +233,35 @@ public class OrderService {
     /**
      * Удаление товара из корзины
      * */
-    public Mono<Integer> deleteProductInOrder(Integer itemId) {
+    public Mono<Integer> deleteProductInOrder(Integer itemId, Authentication authUser) {
         return productsInOrderRepository.findById(itemId)
                 .switchIfEmpty(Mono.error(new BadRequestException("There is no such Product in the cart")))
                 .flatMap(item -> {
                     Integer productId = item.getProductId();
-                    return productsInOrderRepository.deleteById(item.getId())
-                            .thenReturn(productId);
-                    });
+                    String userLogin = authUser.getName();
+                    Integer orderId = item.getOrderId();
+
+                    // Валидируем принадлежность заказа пользователю
+                    return validOrderIdByUserLogin(userLogin, orderId)
+                            .flatMap(isValid -> {
+                                if (!isValid) {
+                                    return Mono.error(new BadRequestException("Order does not belong to the user"));
+                                }
+                                return productsInOrderRepository.deleteById(item.getId())
+                                        .thenReturn(productId);
+                            });
+                });
     }
 
     /**
      * Изменение количества товара из корзины
      * */
-    public Mono<Integer> editProductInOrder(Integer itemId, Integer quantity) {
+    public Mono<Integer> editProductInOrder(Integer itemId, Integer quantity, Authentication authUser) {
         return productsInOrderRepository.findById(itemId)
                 .switchIfEmpty(Mono.error(new BadRequestException("There is no such Product in the cart")))
                 .flatMap(item -> {
+
+                    //получить позака по логину, вытащие его id найти заказ по id и статусу креате, если такого нет выкидываем ошибку, если такой есть првоеряем пользака
                     // Валидация
                     if (quantity == null) {
                         return Mono.error(new BadRequestException("Количество не указано"));
@@ -240,17 +269,45 @@ public class OrderService {
                     if (item.getProductCount() == null) {
                         return Mono.error(new BadRequestException("Количество товара не указано"));
                     }
-                    Integer productId = item.getProductId();
-                    int countProduct = item.getProductCount() + quantity;
-                    if (countProduct > 0) {
-                        item.setProductCount(countProduct);
-                       return productsInOrderRepository.save(item)
-                                .thenReturn(productId);
-                    } else {
-                        return productsInOrderRepository.deleteById(item.getId())
-                                .thenReturn(productId);
-                    }
+
+                    String userLogin = authUser.getName();
+                    Integer orderId = item.getOrderId();
+
+                    // Валидируем принадлежность заказа пользователю
+                    return validOrderIdByUserLogin(userLogin, orderId)
+                            .flatMap(isValid -> {
+                                if (!isValid) {
+                                    return Mono.error(new BadRequestException("Order does not belong to the user"));
+                                }
+
+                                // Вычисляем новое количество
+                                int newCount = item.getProductCount() + quantity;
+                                Integer productId = item.getProductId();
+
+                                if (newCount > 0) {
+                                    // Обновляем количество
+                                    item.setProductCount(newCount);
+                                    return productsInOrderRepository.save(item)
+                                            .thenReturn(productId);
+                                } else {
+                                    // Удаляем товар из заказа если количество <= 0
+                                    return productsInOrderRepository.deleteById(item.getId())
+                                            .thenReturn(productId);
+                                }
+                            });
                 });
+    }
+
+    private Mono<Boolean> validOrderIdByUserLogin(String userLogin, Integer orderId) {
+        if (userLogin == null || orderId == null) {
+            return Mono.just(false);
+        }
+        return userService.findByLogin(userLogin)
+                .switchIfEmpty(Mono.error(new BadRequestException("User not found")))
+                .flatMap(authUser -> findCartById(orderId)
+                        .map(order -> order.getUserId().equals(authUser.getId()))
+                )
+                .defaultIfEmpty(false);
     }
 
 
@@ -264,7 +321,7 @@ public class OrderService {
                 .collectList()
                 .flatMap(orders -> {
                     if (!orders.isEmpty()) {
-                        orders.stream().filter(it -> it.getUpdatedAt().isBefore(LocalDateTime.now().minusMinutes(5)));
+                        orders.stream().filter(it -> it.getUpdatedAt().isAfter(LocalDateTime.now().minusMinutes(5)));
                         orders.forEach(order -> order.setStatus(OrderStatus.CLOSED));
                         return orderRepository.saveAll(orders).then();
                     }
@@ -275,15 +332,14 @@ public class OrderService {
                         error -> log.error("Failed to close orders in progress", error),
                         () -> log.debug("Order closing job completed")
                 );
-
     }
 
 
     /**
      * Получение баланса пользователя
      * */
-    public Mono<Integer> getBalance() {
-        return paymentService.getBalance()
+    public Mono<Integer> getBalance(Integer userId) {
+        return paymentService.getBalance(userId)
                 .map(BalanceResponse::getBalance)
                 .onErrorResume(e -> {
                     log.warn("Failed to get balance {}", e.getMessage());
@@ -294,10 +350,10 @@ public class OrderService {
     /**
      * Пополнение баланса пользователя
      * */
-    public Mono<Boolean> setBalance(Integer amount) {
+    public Mono<Boolean> setBalance(Integer userId, Integer amount) {
         AmountRequest amountRequest = new AmountRequest();
         amountRequest.setDepositAmount(amount);
-        return paymentService.setBalance(amountRequest)
+        return paymentService.setBalance(userId, amountRequest)
                 .thenReturn(true)
                 .onErrorResume(e -> {
                     log.warn("Failed to set balance {}", e.getMessage());

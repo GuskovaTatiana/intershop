@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.model.PaymentResponse;
+import ru.yandex.practicum.shop.model.User;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
 import ru.yandex.practicum.shop.model.enums.OrderStatus;
@@ -61,6 +62,16 @@ public class TestDataUtils {
         response.setMessage(message);
 
         return response;
+    }
+
+    public User getUserTestData() {
+        User user = new User();
+        user.setId(1);
+        user.setLogin("test");
+        user.setPassword("test");
+        user.setFirstName("Тест");
+        user.setLastName("Тест");
+        return user;
     }
 
 }

@@ -27,12 +27,11 @@ public class PaymentControllerTest {
     @MockitoBean
     private PaymentService paymentService;
 
-
     @Test
     void getBalance_ShouldReturnBalance_WhenServiceReturnsValue() {
         // Arrange
         Integer balance = 20000;
-        Mockito.when(paymentService.getBalance())
+        Mockito.when(paymentService.getBalance(any()))
                 .thenReturn(Mono.just(balance));
         webTestClient.get().uri("/api/payments/balance")
                 .exchange()
@@ -49,7 +48,7 @@ public class PaymentControllerTest {
         AmountRequest amountRequest = new AmountRequest();
         amountRequest.setDepositAmount(3000);
 
-        Mockito.when(paymentService.setBalance(any()))
+        Mockito.when(paymentService.setBalance(any(), any()))
                 .thenReturn(Mono.just(newBalance));
 
         webTestClient.post().uri("/api/payments/balance")
@@ -72,7 +71,7 @@ public class PaymentControllerTest {
                 .balance(5000)
                 .success(true).build();
 
-        Mockito.when(paymentService.processPayment(any()))
+        Mockito.when(paymentService.processPayment(any(), any()))
                 .thenReturn(Mono.just(transaction));
 
         webTestClient.post().uri("/api/payments/process")

@@ -2,6 +2,7 @@ package ru.yandex.practicum.shop.controller;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import ru.yandex.practicum.shop.model.dto.FilterProductDTO;
 import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
 import ru.yandex.practicum.shop.service.OrderService;
+import ru.yandex.practicum.shop.service.UserService;
 
 import java.util.Comparator;
 import java.util.List;
@@ -28,17 +30,23 @@ import java.util.stream.Collectors;
 @RequestMapping("/cart")
 public class CartController {
     private final OrderService orderService;
+    private final UserService userService;
 
     /**
      * Открытие страницы Корзина
      * */
     @GetMapping
     public Mono<String> getCart(
-            Model model) {
+            Model model, Authentication authUser) {
         // получаем список продуктов в корзине
-        return orderService.getOrderInCart()
-                .zipWith(orderService.getBalance()
-                        .onErrorReturn(-1))
+        if (authUser == null || !authUser.isAuthenticated()) {
+            return Mono.just("redirect:/product");
+        }
+        return userService.findByLogin(authUser.getName()).flatMap(user -> {
+                    return orderService.getOrderInCart(user.getId())
+                            .zipWith(orderService.getBalance(user.getId())
+                                    .onErrorReturn(-1));
+        })
                 .flatMap(tuple -> {
                     OrderDTO order = tuple.getT1();
                     Integer balance = tuple.getT2();
@@ -79,9 +87,14 @@ public class CartController {
             @PathVariable int id,
             @RequestParam Integer quantity,
             @ModelAttribute FilterProductDTO productFilter,
-            @RequestParam(defaultValue = "product") String redirectTo
+            @RequestParam(defaultValue = "product") String redirectTo,
+            Authentication authUser
           ) {
-        return orderService.editProductInOrder(id, quantity)
+        if (authUser == null || !authUser.isAuthenticated()) {
+            return Mono.just("redirect:/product");
+        }
+        //todo сделать проверку принадлежности продукта в корзине авторизованному пользователю
+        return orderService.editProductInOrder(id, quantity, authUser)
                 .map(productId -> {
                     String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
                     if (productFilter != null && redirectUrl.equals("product")){
@@ -99,8 +112,12 @@ public class CartController {
     public Mono<String> deleteProductFromOrder(
             @PathVariable int id,
             @ModelAttribute FilterProductDTO productFilter,
-            @RequestParam(defaultValue = "product") String redirectTo) {
-        return orderService.deleteProductInOrder(id)
+            @RequestParam(defaultValue = "product") String redirectTo,
+            Authentication authUser) {
+        if (authUser == null || !authUser.isAuthenticated()) {
+            return Mono.just("redirect:/product");
+        }
+        return orderService.deleteProductInOrder(id, authUser)
                 .map(productId -> {
                     String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
                     if (productFilter != null && redirectUrl.equals("product")){
@@ -117,9 +134,14 @@ public class CartController {
         public Mono<String> addProductToOrder(
                 @PathVariable int productId,
                 @ModelAttribute FilterProductDTO productFilter,
-                @RequestParam(defaultValue = "product") String redirectTo
+                @RequestParam(defaultValue = "product") String redirectTo,
+                Authentication authUser
         ) {
-            return orderService.addProductInCart(productId, 1)
+            if (authUser == null || !authUser.isAuthenticated()) {
+                return Mono.just("redirect:/product");
+            }
+            return userService.findByLogin(authUser.getName())
+                    .flatMap(user -> orderService.addProductInCart(user.getId(), productId, 1)
                     .then(Mono.fromCallable(() -> {
                         String redirectUrl = redirectTo.replace("{productId}", String.valueOf(productId));
 
@@ -129,15 +151,19 @@ public class CartController {
                         }
 
                         return "redirect:/" + redirectUrl;
-                    }));
+                    })));
         }
 
     @PostMapping("/balance/replenishment")
-    public Mono<String> replenishmentBalance(@ModelAttribute BalanceReplenishmentRequest balance) {
-        return orderService.setBalance(balance.getAmount())
+    public Mono<String> replenishmentBalance(@ModelAttribute BalanceReplenishmentRequest balance,
+                                             Authentication authUser) {
+        return userService.findByLogin(authUser.getName())
+                .flatMap(user -> orderService.setBalance(user.getId(), balance.getAmount()))
                 .thenReturn("redirect:/cart");
     }
 
+
+//
     private String buildRedirectUrl(String baseUrl, FilterProductDTO productFilter) {
         if (productFilter == null) {
             return baseUrl;

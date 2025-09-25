@@ -95,13 +95,21 @@ public class ProductService {
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize());
         return getSortedListProduct(filter)
                 .map(products -> {
-                    List<ProductDTO> productFromCart = order.getProducts();
+
                     int startIndex = pageable.getPageSize() * pageable.getPageNumber();
                     int finishIndex = (startIndex + pageable.getPageSize() >= products.size()) ? products.size()-1 : startIndex + pageable.getPageSize();
                     List<Product> pageProduct = products.subList(startIndex, finishIndex);
 
-                    Map<Integer, Integer> countMap = getCountToProductInCart(productFromCart);
-                    Map<Integer, Integer> itemIdMap = getItemIdToProductInCart(productFromCart);
+                    Map<Integer, Integer> countMap = new HashMap<>();
+                    Map<Integer, Integer> itemIdMap = new HashMap<>();
+                    if (order != null) {
+                        List<ProductDTO> productFromCart = order.getProducts();
+                        if (productFromCart != null || productFromCart.isEmpty()) {
+                            countMap = getCountToProductInCart(productFromCart);
+                            itemIdMap = getItemIdToProductInCart(productFromCart);
+                        }
+                    }
+
 
                     List<ProductDTO> dtoList = productMapper.toDto(pageProduct, countMap, itemIdMap);
                     return new PageImpl<>(dtoList, pageable, products.size());
@@ -136,12 +144,18 @@ public class ProductService {
                                 .switchIfEmpty(Mono.error(new BadRequestException("Incorrect product id")))
                                 .flatMap(cacheService::saveProductByIdToCache)
                 ))
-                .flatMap(product ->
-                        productsInOrderRepository.findFirstByOrderIdAndProductId(orderId, product.getId())
-                                       .map(item -> productMapper.toDto(product, item.getProductCount(), item.getId()))
-                                       .defaultIfEmpty(productMapper.toDto(product, null, null))
-
-                );
+                .flatMap(product -> {
+                    if (product == null || product.getId() == null) {
+                        return Mono.error(new BadRequestException("Product data is invalid"));
+                    }
+                        if (orderId == null) {
+                            return Mono.just(productMapper.toDto(product, null, null));
+                        } else {
+                            return productsInOrderRepository.findFirstByOrderIdAndProductId(orderId, product.getId())
+                                    .map(item -> productMapper.toDto(product, item.getProductCount(), item.getId()))
+                                    .defaultIfEmpty(productMapper.toDto(product, null, null));
+                        }
+                });
     }
 
 

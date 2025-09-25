@@ -10,11 +10,17 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.dto.ProductDTO;
+import ru.yandex.practicum.shop.model.enums.OrderStatus;
+import ru.yandex.practicum.shop.service.OrderService;
 import ru.yandex.practicum.shop.service.ProductService;
+import ru.yandex.practicum.shop.service.UserService;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,14 +35,27 @@ public class ProductControllerTest {
     private WebTestClient webTestClient;
     @MockitoBean
     private ProductService productService;
+    @MockitoBean
+    private UserService userService;
+    @MockitoBean
+    private OrderService orderService;
 
     private TestDataUtils testData = new TestDataUtils();
 
-    //Получение списка продуктов
+
+    //Получение списка продуктов без аутонтефикацией
     @Test
-    void getListOfProducts_shouldReturnHtmlWithProducts() throws Exception  {
+    void getListOfProducts_withoutAuthentication_shouldReturnHtmlWithProducts() throws Exception  {
+        OrderDTO order = testData.getOrder(1, OrderStatus.CREATE, testData.getListProduct().getContent());
         Mockito.when(productService.getProductsByFilter(any(), any())).thenReturn(Mono.just(testData.getListProduct()));
-        webTestClient.get().uri(uriBuilder -> uriBuilder
+        Mockito.when(orderService.getOrderInCart(any())).thenReturn(Mono.just(order));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+
+        webTestClient
+                .mutateWith(SecurityMockServerConfigurers.mockUser().roles("ANONYMOUS")) // добавляем анонимного пользователя
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .get().uri(uriBuilder -> uriBuilder
                         .path("/product")
                         .queryParam("page", "0")
                         .queryParam("size", "10")
@@ -67,13 +86,98 @@ public class ProductControllerTest {
                 });
     }
 
-    //Открытие страницы с описанием продукта
+    //Получение списка продуктов с аутонтефикацией
     @Test
-    void getProductById_shouldReturnHtmlWithProductInfo() throws Exception  {
+    void getListOfProducts_withAuthentication_shouldReturnHtmlWithProducts() throws Exception  {
+        OrderDTO order = testData.getOrder(1, OrderStatus.CREATE, testData.getListProduct().getContent());
+        Mockito.when(productService.getProductsByFilter(any(), any())).thenReturn(Mono.just(testData.getListProduct()));
+        Mockito.when(orderService.getOrderInCart(any())).thenReturn(Mono.just(order));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockUser("test"))
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .get().uri(uriBuilder -> uriBuilder
+                        .path("/product")
+                        .queryParam("page", "0")
+                        .queryParam("size", "10")
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+
+                    // Парсинг HTML с Jsoup
+                    Document doc = Jsoup.parse(body);
+
+                    // Проверка количества заказов
+                    Elements productContainerElements = doc.select("#products-container > div");
+                    Assertions.assertEquals(3, productContainerElements.size());
+
+                    Element product = productContainerElements.first();
+                    assertNotNull(product);
+                    // Проверка титульника заказа
+                    Element titleElement = product.selectFirst("div > a > h3");
+                    assertNotNull(titleElement);
+                    Assertions.assertEquals("Товар 1", titleElement.text());
+
+                    assertTrue(body.contains("products"));
+                });
+    }
+
+    //Открытие страницы с описанием продукта без авторизации
+    @Test
+    void getProductById_withoutAuthentication_shouldReturnHtmlWithProductInfo() throws Exception  {
         Integer productId = 3;
+        OrderDTO order = testData.getOrder(1, OrderStatus.CREATE, testData.getListProduct().getContent());
         ProductDTO dto = testData.getProduct(productId, "Товар 3", "/images/image3.png", "Описание 3", 25);
-        Mockito.when(productService.getProductById(any(), productId)).thenReturn(Mono.just(dto));
-        webTestClient.get().uri("/product/{productId}", 3)
+        Mockito.when(productService.getProductById(any(), any())).thenReturn(Mono.just(dto));
+        Mockito.when(orderService.getOrderInCart(any())).thenReturn(Mono.just(order));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockUser().roles("ANONYMOUS")) // добавляем анонимного пользователя
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .get().uri("/product/{productId}", 3)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML)
+                .expectBody(String.class)
+                .consumeWith(response -> {
+                    String body = response.getResponseBody();
+                    assertNotNull(body);
+
+                    // Парсинг HTML с Jsoup
+                    Document doc = Jsoup.parse(body);
+
+                    // Проверка количества заказов
+                    Elements itemElements = doc.select("#item");
+                    Assertions.assertEquals(1, itemElements.size());
+
+                    // Проверка титульника заказа
+                    Element titleElement = itemElements.selectFirst("h3");
+                    assertNotNull(titleElement);
+                    Assertions.assertEquals("Товар 3", titleElement.text());
+
+                    assertTrue(body.contains("product"));
+                });
+    }
+
+    //Открытие страницы с описанием продукта с авторизацией
+    @Test
+    void getProductById_withAuthentication_shouldReturnHtmlWithProductInfo() throws Exception  {
+        Integer productId = 3;
+        OrderDTO order = testData.getOrder(1, OrderStatus.CREATE, testData.getListProduct().getContent());
+        ProductDTO dto = testData.getProduct(productId, "Товар 3", "/images/image3.png", "Описание 3", 25);
+        Mockito.when(productService.getProductById(any(), any())).thenReturn(Mono.just(dto));
+        Mockito.when(orderService.getOrderInCart(any())).thenReturn(Mono.just(order));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockUser("test"))
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .get().uri("/product/{productId}", 3)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.TEXT_HTML)

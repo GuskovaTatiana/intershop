@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT: false
+    ports:
+      - "8081:8081"
+    command:
+      - start-dev
+    networks:
+      - keycloak-network
+
+#  networks:
+#    keycloak-network:
+#      driver: bridge
   postgres:
     image: postgres:15
     environment:

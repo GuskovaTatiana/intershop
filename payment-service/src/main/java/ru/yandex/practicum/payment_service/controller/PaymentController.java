@@ -23,8 +23,8 @@ public class PaymentController implements PaymentsApi {
     private final PaymentService service;
 
     @Override
-    public Mono<ResponseEntity<BalanceResponse>> getBalance(ServerWebExchange exchange) {
-        return service.getBalance()
+    public Mono<ResponseEntity<BalanceResponse>> getBalance(Integer userId, ServerWebExchange exchange) {
+        return service.getBalance(userId)
                 .map(balance -> new BalanceResponse()
                         .balance(balance))
                 .map(ResponseEntity::ok)
@@ -33,9 +33,10 @@ public class PaymentController implements PaymentsApi {
     }
 
     @Override
-    public Mono<ResponseEntity<PaymentResponse>> processPayment(Mono<PaymentBody> paymentBody, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<PaymentResponse>> processPayment(Integer userId, Mono<PaymentBody> paymentBody, ServerWebExchange exchange) {
         return paymentBody.flatMap(request ->
                 service.processPayment(
+                                userId,
                                 request.getAmount()
                         )
                         .map(transaction -> new PaymentResponse()
@@ -54,16 +55,17 @@ public class PaymentController implements PaymentsApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> setBalance(Mono<AmountRequest> amountRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Void>> setBalance(Integer userId, Mono<AmountRequest> amountRequest, ServerWebExchange exchange) {
         return amountRequest
                 .flatMap(request -> {
                     if (request.getDepositAmount() == null) {
                         return Mono.just(ResponseEntity.badRequest().<Void>build());
                     }
-                    return service.setBalance(request.getDepositAmount())
+                    return service.setBalance(userId, request.getDepositAmount())
                         .then(Mono.just(ResponseEntity.created(null).<Void>build()));
                  });
 //                .onErrorResume(Exception.class, e ->
 //                        Mono.just(ResponseEntity.internalServerError().build()));
     }
+
 }

@@ -29,6 +29,12 @@ public class ProductServiceTest {
     private ProductService productService;
 
     @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
     private CacheService cacheService;
 
     @BeforeAll
@@ -79,7 +85,9 @@ public class ProductServiceTest {
         Integer productId = 21;
 
         // Первый вызов - должен загрузить из БД и сохранить в кэш
-        productService.getProductById(any(), productId)
+        userService.findByLogin("test")
+                .flatMap(authUser -> orderService.getOrderInCart(authUser.getId()))
+                .flatMap(order -> productService.getProductById(order.getId(), productId))
                 .doOnSuccess(product -> {
                     assertNotNull(product);
                     assertEquals(productId, product.getId());
@@ -108,7 +116,9 @@ public class ProductServiceTest {
     @Test
     void getProductById_shouldReturnProductById() {
         Integer productId = 21;
-        productService.getProductById(any(), productId)
+        userService.findByLogin("test")
+                .flatMap(authUser -> orderService.getOrderInCart(authUser.getId()))
+                .flatMap(order -> productService.getProductById(order.getId(), productId))
                         .doOnSuccess(product -> {
                             assertNotNull(product);
                             assertEquals(productId, product.getId());
@@ -117,7 +127,6 @@ public class ProductServiceTest {
                             assertEquals(1, product.getCount());
                         })
                 .block();
-
     }
 
     // получение товара по идентификатору ен находящегося в корзине

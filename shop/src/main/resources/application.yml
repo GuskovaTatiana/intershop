@@ -6,6 +6,11 @@ server:
     max-connections: 10000                # Максимальное количество одновременных соединений
     validate-headers: true                # Проверка HTTP-заголовков
 spring:
+  session:
+    store-type: redis
+    redis:
+      flush-mode: on_save
+      namespace: spring:session
   application:
     name: internet-shop
   data:
@@ -26,6 +31,25 @@ spring:
       max-idle-time: 30s
       max-life-time: 10m
       validation-query: SELECT 1
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: storefront-app
+            client-secret: your-client-secret
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8081/realms/Ecommerce-Realm
   sql:
     init:
       mode: always
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm: master
+  client-id: payment-service
+  client-secret: YOUR_CLIENT_SECRET
+  grant-type: client_credentials

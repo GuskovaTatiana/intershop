@@ -10,10 +10,17 @@ servers:
     description: Платежная система
 
 paths:
-  /payments/balance:
+  /payments/{userId}/balance:
     get:
       summary: Получение баланса
       operationId: getBalance
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
       responses:
         '200':
           description: Успешный ответ
@@ -28,6 +35,13 @@ paths:
     post:
       summary: Пополнение баланса
       operationId: setBalance
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
       requestBody:
         required: true
         content:
@@ -41,10 +55,17 @@ paths:
       responses:
         '201':
           description: Баланс успешно пополнен
-  /payments/process:
+  /payments/{userId}/process:
     post:
       summary: Списание средств
       operationId: processPayment
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
       requestBody:
         required: true
         content:

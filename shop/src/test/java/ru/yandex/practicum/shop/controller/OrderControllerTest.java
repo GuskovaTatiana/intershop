@@ -8,8 +8,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
@@ -18,6 +21,7 @@ import ru.yandex.practicum.shop.model.dto.OrderDTO;
 import ru.yandex.practicum.shop.model.enums.OrderStatus;
 import ru.yandex.practicum.shop.service.OrderService;
 import ru.yandex.practicum.shop.service.PaymentServiceClient;
+import ru.yandex.practicum.shop.service.UserService;
 import ru.yandex.practicum.shop.utils.TestDataUtils;
 
 import java.util.List;
@@ -34,32 +38,57 @@ public class OrderControllerTest {
     private WebTestClient webTestClient;
     @MockitoBean
     private OrderService orderService;
+
+    @MockitoBean
+    private UserService userService;
     private TestDataUtils testData = new TestDataUtils();
 
     @MockitoBean
     private PaymentServiceClient paymentService;
 
-    //Оформление заказа
+    //Оформление заказа без авторизации
     @Test
-    void createOrder_shouldReturnHtmlWithOrderInfo() throws Exception  {
-        Mockito.when(paymentService.processPayment(any()))
+    void createOrder_withoutAuthentication_shouldReturnException() throws Exception  {
+        Mockito.when(paymentService.processPayment(any(), any()))
                 .thenReturn(Mono.just(testData.getPaymentResponse(null)));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
         OrderDTO createOrder = testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent());
-        Mockito.when(orderService.addNewOrder(any()))
+        Mockito.when(orderService.addNewOrder(any(), any()))
                 .thenReturn(Mono.just(createOrder));
         webTestClient.post().uri("/orders?amount=100")
                 .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    //Оформление заказа
+    @Test
+    void createOrder_withAuthentication_shouldReturnHtmlWithOrderInfo() throws Exception  {
+        Mockito.when(paymentService.processPayment(any(), any()))
+                .thenReturn(Mono.just(testData.getPaymentResponse(null)));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+        OrderDTO createOrder = testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent());
+        Mockito.when(orderService.addNewOrder(any(), any()))
+                .thenReturn(Mono.just(createOrder));
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockUser("test"))
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .post().uri("/orders?amount=100")
+                .exchange()
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/orders/1");
-
     }
 
     //Получение списка заказов getOrders
     @Test
-    void getOrders_shouldReturnHtmlWithListOrder() throws Exception  {
+    void getOrders_withAuthentication_shouldReturnHtmlWithListOrder() throws Exception  {
         List<OrderDTO> createOrder = testData.getListOrder();
-        Mockito.when(orderService.findAllCompletedOrder()).thenReturn(Flux.fromIterable(createOrder));
-        webTestClient.get().uri("/orders")
+        Mockito.when(orderService.findAllCompletedOrder(any())).thenReturn(Flux.fromIterable(createOrder));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockUser("test"))
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .get().uri("/orders")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.TEXT_HTML)
@@ -89,10 +118,15 @@ public class OrderControllerTest {
 
     //Получение заказа по идентификатору getOrders
     @Test
-    void getOrderById_shouldReturnHtmlWithOrderInfo() throws Exception  {
+    void getOrderById_withAuthentication_shouldReturnHtmlWithOrderInfo() throws Exception  {
         OrderDTO createOrder = testData.getOrder(1, OrderStatus.CLOSED, testData.getListProduct().getContent());
-        Mockito.when(orderService.findById(1)).thenReturn(Mono.just(createOrder));
-        webTestClient.get().uri("/orders/{orderId}", 1)
+        Mockito.when(orderService.findById(1, 1)).thenReturn(Mono.just(createOrder));
+        Mockito.when(userService.findByLogin(any()))
+                .thenReturn(Mono.just(testData.getUserTestData()));
+        webTestClient.mutateWith(SecurityMockServerConfigurers.mockUser("test"))
+                .mutateWith(SecurityMockServerConfigurers.csrf())
+                .get()
+                .uri("/orders/{orderId}", 1)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.TEXT_HTML)

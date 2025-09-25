@@ -9,11 +9,15 @@ VALUES
     (24, 'Магнитный конструктор', '/images/Magnetic_Constructor.png', 'Магнитный конструктор для мальчиков и девочек ИГРОЗОНИУМ в подарочной упаковке поможет легко занять малышей игрой на несколько часов. Его легко собирать и разбирать.', 910),
     (25, 'Товар вне коризны', '/images/test.png', 'Минимум описания', 2);
 
-INSERT INTO t_orders (id, status, deleted, created_at, updated_at)
+INSERT INTO t_users (id, login, password, first_name, last_name)
 VALUES
-    (1, 'CLOSED', false, now(), now()),
-    (2, 'IN_PROGRESS', false, now(), now()),
-    (3, 'CREATE', false, now(), now());
+    (1, 'test','$2a$10$I53N7Yhyz.ZWFX0fK5uOG.0vcR3EOgXbpx34i8PEtgxj4..ITW5Ui','Тестер','Тестер');
+
+INSERT INTO t_orders (id, user_id, status, deleted, created_at, updated_at)
+VALUES
+    (1, 1, 'CLOSED', false, now(), now()),
+    (2, 1, 'IN_PROGRESS', false, now(), now()),
+    (3, 1, 'CREATE', false, now(), now());
 INSERT INTO t_products_in_order (id, order_id, product_id, product_count)
 VALUES
     (1, 3, 22, 1),

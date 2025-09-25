@@ -1,6 +1,5 @@
 package ru.yandex.practicum.payment_service.service;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -19,7 +18,11 @@ public class PaymentService {
 
     @Value("${payment.balance.amount.default:10000}")
     private Integer defaultBalance;
-    private static final String BALANCE_KEY = "balance";
+    private static final String BALANCE_KEY = "balance:";
+
+    private String getBalanceCacheKey(Integer userId) {
+        return BALANCE_KEY + userId;
+    }
 
     private Mono<Boolean> saveData(String key, Integer value) {
         return redisTemplate.opsForValue().set(key, value);
@@ -35,16 +38,16 @@ public class PaymentService {
 
 
     // получение баланса
-    public Mono<Integer> getBalance() {
-        return getData(BALANCE_KEY)
+    public Mono<Integer> getBalance(Integer userId) {
+        return getData(getBalanceCacheKey(userId))
                 .switchIfEmpty(Mono.defer(() -> {
-                    return saveData(BALANCE_KEY, defaultBalance)
+                    return saveData(getBalanceCacheKey(userId), defaultBalance)
                             .then(Mono.just(defaultBalance));
                 }));
     }
 
     // пополнение баланса
-    public Mono<Integer> setBalance(Integer amount) {
+    public Mono<Integer> setBalance(Integer userId, Integer amount) {
         // Проверка на null входящего параметра
         if (amount == null) {
             return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Amount cannot be null"));
@@ -55,13 +58,13 @@ public class PaymentService {
             return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Amount cannot be negative"));
         }
 
-        return getData(BALANCE_KEY)
+        return getData(getBalanceCacheKey(userId))
                 .flatMap(currentBalance -> {
                     int current = currentBalance != null ? currentBalance : 0;
                     int newBalance = current + amount;
 
                     if (newBalance <= defaultBalance) {
-                        return saveData(BALANCE_KEY, newBalance)
+                        return saveData(getBalanceCacheKey(userId), newBalance)
                                 .then(Mono.just(newBalance));
                     } else {
                         return Mono.error(new BadRequestException("BALANCE_LIMIT_EXCEEDED", "Exceeding the deposit limit"));
@@ -70,13 +73,13 @@ public class PaymentService {
                 .switchIfEmpty(Mono.defer(() -> {
                     // Если баланса нет в Redis, устанавливаем начальное значение
                     int initialBalance = Math.min(amount, defaultBalance);
-                    return saveData(BALANCE_KEY, initialBalance)
+                    return saveData(getBalanceCacheKey(userId), initialBalance)
                             .then(Mono.just(initialBalance));
                 }));
     }
 
     // списание суммы с баланса
-    public Mono<PaymentTransaction> processPayment(Integer debitAmount) {
+    public Mono<PaymentTransaction> processPayment(Integer userId, Integer debitAmount) {
         // Проверка на null входящего параметра
         if (debitAmount == null) {
             return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Debit amount cannot be null"));
@@ -87,7 +90,7 @@ public class PaymentService {
             return Mono.error(new IllegalArgumentException("BAD_REQUEST", "Debit amount cannot be negative"));
         }
 
-        return getData(BALANCE_KEY)
+        return getData(getBalanceCacheKey(userId))
                 .flatMap(currentBalance -> {
                     int current = currentBalance != null ? currentBalance : 0;
                     int newBalance = current - debitAmount;
@@ -103,7 +106,7 @@ public class PaymentService {
 
                     } else {
                         transaction.setSuccess(true);
-                        return saveData(BALANCE_KEY, newBalance)
+                        return saveData(getBalanceCacheKey(userId), newBalance)
                                 .then(Mono.just(transaction));
                     }
                 })

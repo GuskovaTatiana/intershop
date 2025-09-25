@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 
 
 @SpringBootTest
@@ -26,11 +27,13 @@ public class PaymentServiceTest {
 
     @Value("${payment.balance.amount.default:10000}")
     private Integer defaultBalance;
+
+    private final static Integer userId = 1;
     @Test
     void getBalance_WhenBalanceExists_ShouldReturnBalance() {
 
         // Act & Assert
-        paymentService.getBalance()
+        paymentService.getBalance(userId)
                 .doOnSuccess(balance -> {
             assertNotNull(balance);
             assertEquals(balance, defaultBalance);
@@ -41,14 +44,14 @@ public class PaymentServiceTest {
     void setBalance_WithNullAmount_ShouldReturnError() {
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            paymentService.setBalance(null).block();
+            paymentService.setBalance(userId, null).block();
         });
     }
 
     @Test
     void setBalance_WithNegativeAmount_ShouldReturnError() {
         assertThrows(IllegalArgumentException.class, () -> {
-            paymentService.setBalance(-100).block();
+            paymentService.setBalance(userId, -100).block();
         });
     }
 
@@ -60,7 +63,7 @@ public class PaymentServiceTest {
         //устанавливаем баланс
         paymentService.setValueToBalance(currentBalance).block();
 
-        paymentService.setBalance(amount).doOnSuccess(newBalance -> {
+        paymentService.setBalance(userId, amount).doOnSuccess(newBalance -> {
             assertNotNull(newBalance);
             assertEquals(newBalance, currentBalance + amount);
         }).block();
@@ -74,21 +77,21 @@ public class PaymentServiceTest {
         paymentService.setValueToBalance(defaultBalance).block();
 
         assertThrows(BadRequestException.class, () -> {
-            paymentService.setBalance(amount).block();
+            paymentService.setBalance(userId, amount).block();
         });
     }
 
     @Test
     void processPayment_WithNullAmount_ShouldReturnError() {
         assertThrows(IllegalArgumentException.class, () -> {
-            paymentService.processPayment(null).block();
+            paymentService.processPayment(userId, null).block();
         });
     }
 
     @Test
     void processPayment_WithNegativeAmount_ShouldReturnError() {
         assertThrows(IllegalArgumentException.class, () -> {
-            paymentService.processPayment(-100).block();
+            paymentService.processPayment(userId, -100).block();
         });
     }
 
@@ -99,7 +102,7 @@ public class PaymentServiceTest {
 
         //устанавливаем баланс
         paymentService.setValueToBalance(currentBalance).block();
-        paymentService.processPayment(debitAmount).doOnSuccess(transaction -> {
+        paymentService.processPayment(userId, debitAmount).doOnSuccess(transaction -> {
             assertNotNull(transaction);
             assertEquals(true, transaction.getSuccess());
             assertEquals(currentBalance - debitAmount, transaction.getBalance());

@@ -15,6 +15,13 @@ public interface OrderRepository extends R2dbcRepository<Order, Integer> {
 
     @Query("""
             SELECT * FROM t_orders o
+            WHERE o.user_id = :userId AND o.status IN (:status) AND o.deleted = false
+            ORDER BY o.id
+            """)
+    Flux<Order> findByUserIdAndStatusInAndDeletedIsFalse(Integer userId, List<OrderStatus> status);
+
+    @Query("""
+            SELECT * FROM t_orders o
             WHERE o.status IN (:status) AND o.deleted = false
             ORDER BY o.id
             """)
@@ -22,9 +29,16 @@ public interface OrderRepository extends R2dbcRepository<Order, Integer> {
 
     @Query("""
             SELECT * FROM t_orders o
-            WHERE o.status IN (:status) AND o.deleted = false
+            WHERE o.user_id = :userId AND o.status IN (:status) AND o.deleted = false
             ORDER BY o.id LIMIT 1
             """)
-    Mono<Order> findFirstByStatusInAndDeletedIsFalseOrderByCreatedAtDesc(List<OrderStatus> status);
+    Mono<Order> findFirstByStatusInAndDeletedIsFalseOrderByCreatedAtDesc(Integer userId, List<OrderStatus> status);
+
+    @Query("""
+            SELECT * FROM t_orders o
+            WHERE o.id = :id AND o.status IN (:status) AND o.deleted = false
+            ORDER BY o.id LIMIT 1
+            """)
+    Mono<Order> findOrderByIdAndStatus(Integer id, List<OrderStatus> status);
 
 }

@@ -1,24 +1,99 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/main_page_style.css}"/>
-
-
-
+    <link rel="stylesheet" th:href="@{/css/auth_style.css}"/>
+    <link rel="stylesheet" th:href="@{/css/register_style.css}"/>
 
 </head>
 
 <body>
+<div class="notification-container" id="notificationContainer" th:text="${error}"></div>
 <header>
-    <div class="container header-content">
+    <div class="container header-content" th:with="isAuth=${#authentication != null and #authentication.authenticated}">
         <div class="logo">МАГАЗИН</div>
-        <div class="cart">
+        <!-- Отладочная информация -->
+        <div class="cart" th:if="${isAuth != null and isAuth}">
             <a class="header_button" th:href="@{/orders}">Заказы </a>
             <a class="header_button" th:href="@{/cart}">Корзина</a>
+            <a class="header_button" th:href="@{/logout}">Выйти</a>
+        </div>
+        <div class="cart" th:if="${isAuth == null or !isAuth}">
+            <div class="wb-auth-container">
+                <div class="header_button" id="authTrigger">
+                    <div class="auth-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="auth-text" >Войти</div>
+<!--                    <span sec:authentication="name"></span>-->
+                </div>
+                <div class="auth-dropdown" id="authDropdown">
+                    <!-- Форма входа -->
+                    <div class="dropdown-header">
+                        <div class="dropdown-title">Войдите в аккаунт</div>
+                    </div>
+
+                    <form class="auth-form" th:action="@{/auth}" th:method="post">
+                        <div class="form-group">
+                            <input type="text" name="login" class="form-input" placeholder="Логин">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" name="password" class="form-input" placeholder="Пароль">
+                        </div>
+                        <button type="submit" class="form-submit">Войти</button>
+                    </form>
+
+                    <div class="auth-links">
+                        <a href="#" class="auth-link" id="registerLink">Регистрация</a>
+                    </div>
+                </div>
+                <!-- Модальное окно регистрации -->
+                <div id="registerModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" id="closeModal">&times;</span>
+                        <div class="modal-header">
+                            <h2 class="modal-title">Регистрация</h2>
+                        </div>
+                        <form id="registerForm" th:action="@{/register}" th:method="post">
+                            <div class="form-group">
+                                <label class="form-label" for="reg-firstname">Имя пользователя</label>
+                                <input type="text" class="form-input" name="firstName" id="reg-firstname" placeholder="Введите имя пользователя" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="reg-lastname">Фамилия пользователя</label>
+                                <input type="text" class="form-input" name="lastName" id="reg-lastname" placeholder="Введите фамилию пользователя">
+
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="reg-login">Логин</label>
+                                <input class="form-input" name="login" id="reg-login" placeholder="Придумайте логин" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="reg-password">Пароль</label>
+                                <input type="password" name="password" class="form-input" id="reg-password" placeholder="Введите пароль" required>
+                                <div class="error-message" id="password-error">Пароль должен содержать не менее 6 символов</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="reg-confirm-password">Подтвердите пароль</label>
+                                <input type="password" class="form-input" id="reg-confirm-password" placeholder="Повторите пароль" required>
+                                <div class="error-message" id="confirm-password-error">Пароли не совпадают</div>
+                            </div>
+
+                            <button type="submit" class="form-submit">Зарегистрироваться</button>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </header>
@@ -81,8 +156,8 @@
                     <h3 class="product-title" th:text="${product.getTitle()}" ></h3>
                 </a>
                 <div class="product-price" th:text="${product.getPrice()}+' руб.'"></div>
-                <div class="product-actions">
-                    <div th:if="${product.getItemId() != null}" class="quantity-controls">
+                <div class="product-actions" th:if="${#authentication != null and #authentication.authenticated}">
+                    <div th:if="${product.getItemId() != null}" class="quantity-controls" >
                         <form th:action="@{/cart/item/{id}/edit(id=${product.getItemId()}, productFilter=${filter}, quantity=-1, redirectTo = 'product')}" method="post">
                             <button class="quantity-btn" >-</button>
                             <!-- Параметры автоматически свяжутся с FilterProductDTO -->
@@ -123,6 +198,71 @@
         </div>
     </div>
 </div>
+<script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const notificationContainer = document.getElementById('notificationContainer');
+        const authDropdown = document.getElementById('authDropdown');
+
+        // Проверяем, есть ли текст ошибки в контейнере уведомлений
+        if (notificationContainer && notificationContainer.textContent.trim() !== '') {
+            // Открываем выпадающее меню авторизации
+            if (authDropdown) {
+                authDropdown.classList.add('active');
+            }
+
+            // Дополнительно: можно также открыть модальное окно регистрации, если ошибка связана с регистрацией
+            // registerModal.style.display = 'block';
+        }
+    });
+    // Открытие/закрытие блока авторизации
+    document.getElementById('authTrigger').addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.getElementById('authDropdown').classList.toggle('active');
+    });
+
+    // Открытие модального окна при клике на ссылку "Регистрация"
+    registerLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        registerModal.style.display = 'block';
+        // Закрываем выпадающее меню авторизации
+        document.getElementById('authDropdown').classList.remove('active');
+    });
+
+    // Закрытие модального окна при клике на крестик
+    closeModal.addEventListener('click', function() {
+        registerModal.style.display = 'none';
+        clearFormErrors();
+    });
+
+    // Закрытие модального окна при клике вне его области
+    window.addEventListener('click', function(e) {
+        if (e.target === registerModal) {
+            registerModal.style.display = 'none';
+            clearFormErrors();
+        }
+    });
+
+    // Закрытие блока при клике вне его области
+    document.addEventListener('click', function(e) {
+        const authDropdown = document.getElementById('authDropdown');
+        if (!authDropdown.contains(e.target) && e.target !== document.getElementById('authTrigger')) {
+            authDropdown.classList.remove('active');
+        }
+    });
+
+    // // Пример входа (для демонстрации)
+    // document.querySelector('.form-submit').addEventListener('click', function() {
+    //     // В реальном приложении здесь была бы проверка данных
+    //     document.querySelector('.auth-form').style.display = 'none';
+    //     document.querySelector('.social-auth').style.display = 'none';
+    //     document.querySelector('.auth-links').style.display = 'none';
+    //     document.querySelector('.user-menu').style.display = 'block';
+    //     document.querySelector('.dropdown-title').textContent = 'Добро пожаловать!';
+    //     document.querySelector('.dropdown-subtitle').textContent = 'Вы успешно вошли в свой аккаунт';
+    //     document.querySelector('.auth-text').textContent = 'Алексей';
+    // });
+</script>
 </body>
 
 </html>

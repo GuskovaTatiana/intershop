@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8" />
@@ -17,6 +18,7 @@
         <div class="cart">
             <a class="header_button" th:href="@{/product}">Каталог</a>
             <a class="header_button" th:href="@{/orders}">Заказы </a>
+            <span sec:authentication="name">User</span>
         </div>
     </div>
 </header>
