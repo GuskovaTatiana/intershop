@@ -28,8 +28,8 @@ public class PaymentService {
         return redisTemplate.opsForValue().set(key, value);
     }
 
-    public Mono<Boolean> setValueToBalance(Integer value) {
-        return redisTemplate.opsForValue().set(BALANCE_KEY, value);
+    public Mono<Boolean> setValueToBalance(Integer userId, Integer value) {
+        return redisTemplate.opsForValue().set(getBalanceCacheKey(userId), value);
     }
 
     private Mono<Integer> getData(String key) {

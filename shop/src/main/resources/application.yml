@@ -37,19 +37,23 @@ spring:
         registration:
           keycloak:
             provider: keycloak
-            client-id: storefront-app
-            client-secret: your-client-secret
+            client-id: shop-client
+            client-secret: gkX8WjEwWFioxxjtXXNVuXZJqCxiWT6R
             authorization-grant-type: authorization_code
             scope: openid,profile,email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8081/realms/Ecommerce-Realm
+            issuer-uri: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8007}/realms/ecommerce-realm
+
   sql:
     init:
       mode: always
-keycloak:
-  auth-server-url: http://localhost:8080
-  realm: master
-  client-id: payment-service
-  client-secret: YOUR_CLIENT_SECRET
-  grant-type: client_credentials
+
+  # Межсерверные вызовы
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8009}
+  oauth2:
+    client-id: shop-to-payment
+    client-secret: h8TCTNMIyhtWU43FkCk1pnofyxCnOMnP
+    token-uri: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8007}/realms/ecommerce-realm/protocol/openid-connect/token
+

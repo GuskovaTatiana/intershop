@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+
 
 
 @SpringBootTest
@@ -61,7 +61,7 @@ public class PaymentServiceTest {
         Integer currentBalance = 5000;
         Integer amount = 2000;
         //устанавливаем баланс
-        paymentService.setValueToBalance(currentBalance).block();
+        paymentService.setValueToBalance(userId, currentBalance).block();
 
         paymentService.setBalance(userId, amount).doOnSuccess(newBalance -> {
             assertNotNull(newBalance);
@@ -74,7 +74,7 @@ public class PaymentServiceTest {
         // Arrange
         Integer amount = 2000;
         //устанавливаем баланс
-        paymentService.setValueToBalance(defaultBalance).block();
+        paymentService.setValueToBalance(userId, defaultBalance).block();
 
         assertThrows(BadRequestException.class, () -> {
             paymentService.setBalance(userId, amount).block();
@@ -101,7 +101,7 @@ public class PaymentServiceTest {
         Integer debitAmount = 2000;
 
         //устанавливаем баланс
-        paymentService.setValueToBalance(currentBalance).block();
+        paymentService.setValueToBalance(userId, currentBalance).block();
         paymentService.processPayment(userId, debitAmount).doOnSuccess(transaction -> {
             assertNotNull(transaction);
             assertEquals(true, transaction.getSuccess());

@@ -1,9 +1,9 @@
 package ru.yandex.practicum.shop.config;
 
-import io.netty.handler.codec.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
@@ -20,11 +20,7 @@ import org.springframework.security.web.server.authentication.RedirectServerAuth
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository;
 import reactor.core.publisher.Mono;
-import ru.yandex.practicum.shop.repository.UserRepository;
-import ru.yandex.practicum.shop.service.ReactiveUserDetailsServiceImpl;
 import org.springframework.web.server.WebSession;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 
 @Configuration
@@ -38,11 +34,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-//    @Bean
-//    ReactiveUserDetailsService reactiveUserDetailsService(UserRepository userRepository) {
-//        return new ReactiveUserDetailsServiceImpl(userRepository);
-//    }
     @Bean
+    @Primary
     public ReactiveAuthenticationManager authenticationManager(
             ReactiveUserDetailsService userDetailsService,
             PasswordEncoder passwordEncoder) {
@@ -82,5 +75,3 @@ public class SecurityConfig {
     }
 
 }
-
-//th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}

@@ -5,9 +5,12 @@ info:
   description: API платежной системы, для оплаты заказов
 
 servers:
-  - url: http://localhost:8009/api
   - url: http://payment-service:8009/api
+  - url: http://localhost:8009/api
     description: Платежная система
+
+security:
+  - bearerAuth: []
 
 paths:
   /payments/{userId}/balance:
@@ -84,6 +87,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentResponse'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен от OAuth2 сервера авторизации (Keycloak)
   schemas:
     PaymentResponse:
       type: object
