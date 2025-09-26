@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  version: 1.0.0
+  description: API платежной системы, для оплаты заказов
+
+servers:
+  - url: http://payment-service:8009/api
+  - url: http://localhost:8009/api
+    description: Платежная система
+
+security:
+  - bearerAuth: []
+
+paths:
+  /payments/{userId}/balance:
+    get:
+      summary: Получение баланса
+      operationId: getBalance
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                title: BalanceResponse
+                properties:
+                  balance:
+                    type: integer
+    post:
+      summary: Пополнение баланса
+      operationId: setBalance
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: AmountRequest
+              properties:
+                depositAmount:
+                  type: integer
+      responses:
+        '201':
+          description: Баланс успешно пополнен
+  /payments/{userId}/process:
+    post:
+      summary: Списание средств
+      operationId: processPayment
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: PaymentBody
+              properties:
+                amount:
+                  type: integer
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен от OAuth2 сервера авторизации (Keycloak)
+  schemas:
+    PaymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        transactionId:
+          type: string
+          example: "erdkjgbdfvbkjdkd"
+        message:
+          type: string
+          example: "Successful"

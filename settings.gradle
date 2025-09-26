@@ -4,4 +4,7 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
-rootProject.name = 'mvc-internet-shop'
+rootProject.name = 'internet-shop'
+include 'payment-service'
+include 'shop'
+
